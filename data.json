@@ -1,0 +1,913 @@
+{
+ "maj": "2026-10-12",
+ "strava": {
+  "maj": "2026-10-12",
+  "source": "Strava list_activities, du 01/07 au 12/10/2026",
+  "items": [
+   {
+    "id": "20534125560",
+    "n": "Marche en soirée",
+    "t": "Walk",
+    "d": "2026-10-10",
+    "h": "18:44",
+    "km": 2.36,
+    "min": 32.4,
+    "re": 4
+   },
+   {
+    "id": "20472406724",
+    "n": "Marche le midi",
+    "t": "Walk",
+    "d": "2026-10-06",
+    "h": "11:59",
+    "km": 3.13,
+    "min": 50.8,
+    "re": 5
+   },
+   {
+    "id": "20381898553",
+    "n": "HYROX TRAINING — WOD binôme",
+    "t": "HighIntensityIntervalTraining",
+    "d": "2026-09-29",
+    "h": "18:36",
+    "km": 0.0,
+    "min": 36.2,
+    "re": 69
+   },
+   {
+    "id": "20314512366",
+    "n": "HYROX TRAINING — E6' × 2 sets",
+    "t": "HighIntensityIntervalTraining",
+    "d": "2026-09-24",
+    "h": "19:39",
+    "km": 0.0,
+    "min": 37.2,
+    "re": 109
+   },
+   {
+    "id": "20307781384",
+    "n": "Kiné",
+    "t": "WeightTraining",
+    "d": "2026-09-24",
+    "h": "10:45",
+    "km": 0.0,
+    "min": 48.9,
+    "re": 5
+   },
+   {
+    "id": "20297450264",
+    "n": "Marche tapis",
+    "t": "Walk",
+    "d": "2026-09-23",
+    "h": "16:15",
+    "km": 2.91,
+    "min": 37.6,
+    "re": 8
+   },
+   {
+    "id": "20296966520",
+    "n": "PULL",
+    "t": "WeightTraining",
+    "d": "2026-09-23",
+    "h": "14:17",
+    "km": 0.0,
+    "min": 115.2,
+    "re": 23
+   },
+   {
+    "id": "20284828505",
+    "n": "1'15 ON / 45' OFF × 3 sets",
+    "t": "HighIntensityIntervalTraining",
+    "d": "2026-09-22",
+    "h": "18:31",
+    "km": 0.0,
+    "min": 35.5,
+    "re": 81
+   },
+   {
+    "id": "20270191855",
+    "n": "RUN EF 130/140 BPM",
+    "t": "Run",
+    "d": "2026-09-21",
+    "h": "18:22",
+    "km": 5.21,
+    "min": 42.8,
+    "re": 15
+   },
+   {
+    "id": "20264643402",
+    "n": "Marche incliné 8,5% tapis en salle",
+    "t": "Walk",
+    "d": "2026-09-21",
+    "h": "10:19",
+    "km": 4.27,
+    "min": 52.2,
+    "re": 16
+   },
+   {
+    "id": "20264645158",
+    "n": "PUSH",
+    "t": "WeightTraining",
+    "d": "2026-09-21",
+    "h": "09:11",
+    "km": 0.0,
+    "min": 68.5,
+    "re": 14
+   },
+   {
+    "id": "20244011606",
+    "n": "Marche dans l'après-midi",
+    "t": "Walk",
+    "d": "2026-09-19",
+    "h": "16:57",
+    "km": 3.08,
+    "min": 39.6,
+    "re": 5
+   },
+   {
+    "id": "20161403830",
+    "n": "Randonnée",
+    "t": "Hike",
+    "d": "2026-09-13",
+    "h": "15:06",
+    "km": 7.75,
+    "min": 129.3,
+    "re": 28
+   },
+   {
+    "id": "20138943256",
+    "n": "Kiné",
+    "t": "PhysicalTherapy",
+    "d": "2026-09-12",
+    "h": "08:51",
+    "km": 0.0,
+    "min": 10.3,
+    "re": 2
+   },
+   {
+    "id": "20138842453",
+    "n": "HYROX",
+    "t": "HighIntensityIntervalTraining",
+    "d": "2026-09-12",
+    "h": "08:08",
+    "km": 0.0,
+    "min": 42.8,
+    "re": 97
+   },
+   {
+    "id": "20128065142",
+    "n": "RUN ZONE 1",
+    "t": "Run",
+    "d": "2026-09-11",
+    "h": "11:40",
+    "km": 5.64,
+    "min": 49.4,
+    "re": 11
+   },
+   {
+    "id": "20121454466",
+    "n": "HYROX — Sled Push/Pull + WOD",
+    "t": "HighIntensityIntervalTraining",
+    "d": "2026-09-10",
+    "h": "17:22",
+    "km": 0.0,
+    "min": 39.8,
+    "re": 43
+   },
+   {
+    "id": "20099271022",
+    "n": "EF 45' continu",
+    "t": "Run",
+    "d": "2026-09-09",
+    "h": "08:53",
+    "km": 6.72,
+    "min": 50.2,
+    "re": 15
+   },
+   {
+    "id": "20062632909",
+    "n": "Randonnée",
+    "t": "Hike",
+    "d": "2026-09-06",
+    "h": "11:10",
+    "km": 9.23,
+    "min": 155.8,
+    "re": 29
+   },
+   {
+    "id": "20016942394",
+    "n": "Entraînement aux poids le matin",
+    "t": "WeightTraining",
+    "d": "2026-09-03",
+    "h": "10:37",
+    "km": 0.0,
+    "min": 51.7,
+    "re": 5
+   },
+   {
+    "id": "20009703327",
+    "n": "Marche en soirée",
+    "t": "Walk",
+    "d": "2026-09-02",
+    "h": "20:13",
+    "km": 0.49,
+    "min": 7.5,
+    "re": 1
+   },
+   {
+    "id": "20009518325",
+    "n": "EF 50' 128/135 BPM",
+    "t": "Run",
+    "d": "2026-09-02",
+    "h": "19:22",
+    "km": 6.37,
+    "min": 50.2,
+    "re": 12
+   },
+   {
+    "id": "20002198485",
+    "n": "Marche le matin",
+    "t": "Walk",
+    "d": "2026-09-02",
+    "h": "10:35",
+    "km": 2.47,
+    "min": 31.3,
+    "re": 6
+   },
+   {
+    "id": "20001928922",
+    "n": "PUSH PEC TRICEPS",
+    "t": "WeightTraining",
+    "d": "2026-09-02",
+    "h": "09:01",
+    "km": 0.0,
+    "min": 93.0,
+    "re": 13
+   },
+   {
+    "id": "19994175549",
+    "n": "4 rounds — run / cal / thrusters / burpees",
+    "t": "HighIntensityIntervalTraining",
+    "d": "2026-09-01",
+    "h": "18:33",
+    "km": 0.0,
+    "min": 40.5,
+    "re": 78
+   },
+   {
+    "id": "19987612457",
+    "n": "Kiné",
+    "t": "WeightTraining",
+    "d": "2026-09-01",
+    "h": "10:36",
+    "km": 0.0,
+    "min": 60.0,
+    "re": 7
+   },
+   {
+    "id": "19980873765",
+    "n": "Marche en soirée",
+    "t": "Walk",
+    "d": "2026-08-31",
+    "h": "19:41",
+    "km": 2.3,
+    "min": 34.7,
+    "re": 4
+   },
+   {
+    "id": "19953249928",
+    "n": "Marche en soirée",
+    "t": "Walk",
+    "d": "2026-08-29",
+    "h": "19:59",
+    "km": 1.06,
+    "min": 18.0,
+    "re": 2
+   },
+   {
+    "id": "19958649090",
+    "n": "Hyrox Race - Doubles Mixed",
+    "t": "Run",
+    "d": "2026-08-29",
+    "h": "12:43",
+    "km": 8.78,
+    "min": 58.2,
+    "re": 134
+   },
+   {
+    "id": "19931845450",
+    "n": "Marche dans l'après-midi",
+    "t": "Walk",
+    "d": "2026-08-27",
+    "h": "14:23",
+    "km": 3.95,
+    "min": 66.8,
+    "re": 7
+   },
+   {
+    "id": "19905714568",
+    "n": "AMRAP 15' Team of 6",
+    "t": "Crossfit",
+    "d": "2026-08-26",
+    "h": "12:10",
+    "km": 0.0,
+    "min": 20.0,
+    "re": null
+   },
+   {
+    "id": "19904468855",
+    "n": "Course à pied le matin",
+    "t": "Run",
+    "d": "2026-08-26",
+    "h": "09:46",
+    "km": 4.41,
+    "min": 35.0,
+    "re": 9
+   },
+   {
+    "id": "19895263852",
+    "n": "RUN EF MAX 135 BPM",
+    "t": "Run",
+    "d": "2026-08-25",
+    "h": "17:46",
+    "km": 4.39,
+    "min": 34.2,
+    "re": 8
+   },
+   {
+    "id": "19861409551",
+    "n": "EF 60' 135/147 BPM",
+    "t": "Run",
+    "d": "2026-08-23",
+    "h": "10:32",
+    "km": 8.26,
+    "min": 60.1,
+    "re": 47
+   },
+   {
+    "id": "19861491092",
+    "n": "Surf dans l'après-midi",
+    "t": "Surfing",
+    "d": "2026-08-22",
+    "h": "13:20",
+    "km": 3.0,
+    "min": 210.0,
+    "re": null
+   },
+   {
+    "id": "19840960101",
+    "n": "HYROX SIMULATION",
+    "t": "HighIntensityIntervalTraining",
+    "d": "2026-08-21",
+    "h": "19:23",
+    "km": 0.0,
+    "min": 61.8,
+    "re": 109
+   },
+   {
+    "id": "19805956441",
+    "n": "Course à pied le matin",
+    "t": "Run",
+    "d": "2026-08-19",
+    "h": "10:49",
+    "km": 5.38,
+    "min": 45.2,
+    "re": 11
+   },
+   {
+    "id": "19797121653",
+    "n": "WOD HYROX — AMRAP 30 min",
+    "t": "HighIntensityIntervalTraining",
+    "d": "2026-08-18",
+    "h": "18:34",
+    "km": 0.0,
+    "min": 33.3,
+    "re": 89
+   },
+   {
+    "id": "19797121686",
+    "n": "Entraînement aux poids en soirée",
+    "t": "WeightTraining",
+    "d": "2026-08-18",
+    "h": "18:18",
+    "km": 0.0,
+    "min": 12.6,
+    "re": 7
+   },
+   {
+    "id": "19790800735",
+    "n": "Kiné",
+    "t": "WeightTraining",
+    "d": "2026-08-18",
+    "h": "10:35",
+    "km": 0.0,
+    "min": 60.5,
+    "re": 8
+   },
+   {
+    "id": "19784506881",
+    "n": "Marche en soirée",
+    "t": "Walk",
+    "d": "2026-08-17",
+    "h": "19:52",
+    "km": 2.99,
+    "min": 50.7,
+    "re": 5
+   },
+   {
+    "id": "19768863468",
+    "n": "Marche dans l'après-midi",
+    "t": "Walk",
+    "d": "2026-08-16",
+    "h": "16:44",
+    "km": 2.68,
+    "min": 43.2,
+    "re": 5
+   },
+   {
+    "id": "19727509571",
+    "n": "HIIT dans l'après-midi",
+    "t": "HighIntensityIntervalTraining",
+    "d": "2026-08-13",
+    "h": "17:48",
+    "km": 0.0,
+    "min": 17.7,
+    "re": 18
+   },
+   {
+    "id": "19727509619",
+    "n": "HIIT dans l'après-midi",
+    "t": "HighIntensityIntervalTraining",
+    "d": "2026-08-13",
+    "h": "17:23",
+    "km": 0.0,
+    "min": 23.8,
+    "re": 71
+   },
+   {
+    "id": "19727509872",
+    "n": "Marche dans l'après-midi",
+    "t": "Walk",
+    "d": "2026-08-13",
+    "h": "14:32",
+    "km": 4.99,
+    "min": 88.8,
+    "re": 17
+   },
+   {
+    "id": "19790541649",
+    "n": "Entraînement aux poids le matin",
+    "t": "WeightTraining",
+    "d": "2026-08-13",
+    "h": "10:11",
+    "km": 0.0,
+    "min": 46.4,
+    "re": 7
+   },
+   {
+    "id": "19709301650",
+    "n": "Marche en soirée",
+    "t": "Walk",
+    "d": "2026-08-11",
+    "h": "19:48",
+    "km": 2.83,
+    "min": 47.5,
+    "re": 6
+   },
+   {
+    "id": "19709299947",
+    "n": "HIIT en soirée",
+    "t": "HighIntensityIntervalTraining",
+    "d": "2026-08-11",
+    "h": "18:39",
+    "km": 0.0,
+    "min": 30.4,
+    "re": 85
+   },
+   {
+    "id": "19692876471",
+    "n": "Entraînement aux poids le matin",
+    "t": "WeightTraining",
+    "d": "2026-08-11",
+    "h": "10:36",
+    "km": 0.0,
+    "min": 63.4,
+    "re": 9
+   },
+   {
+    "id": "19662140483",
+    "n": "Marche de nuit",
+    "t": "Walk",
+    "d": "2026-08-09",
+    "h": "03:19",
+    "km": 1.2,
+    "min": 12.9,
+    "re": 2
+   },
+   {
+    "id": "19660615710",
+    "n": "Marche de nuit",
+    "t": "Walk",
+    "d": "2026-08-08",
+    "h": "23:26",
+    "km": 1.67,
+    "min": 23.1,
+    "re": 5
+   },
+   {
+    "id": "19652835333",
+    "n": "Entraînement dans l'après-midi",
+    "t": "Workout",
+    "d": "2026-08-07",
+    "h": "16:01",
+    "km": 0.0,
+    "min": 10.8,
+    "re": null
+   },
+   {
+    "id": "19790542133",
+    "n": "Marche dans l'après-midi",
+    "t": "Walk",
+    "d": "2026-08-06",
+    "h": "16:57",
+    "km": 4.81,
+    "min": 78.1,
+    "re": 12
+   },
+   {
+    "id": "19623911283",
+    "n": "Entraînement aux poids le matin",
+    "t": "WeightTraining",
+    "d": "2026-08-06",
+    "h": "10:26",
+    "km": 0.0,
+    "min": 56.5,
+    "re": 9
+   },
+   {
+    "id": "19594524184",
+    "n": "Entraînement aux poids le matin",
+    "t": "WeightTraining",
+    "d": "2026-08-04",
+    "h": "10:38",
+    "km": 0.0,
+    "min": 63.4,
+    "re": 8
+   },
+   {
+    "id": "19434376044",
+    "n": "HIIT dans l'après-midi",
+    "t": "HighIntensityIntervalTraining",
+    "d": "2026-07-23",
+    "h": "17:30",
+    "km": 0.0,
+    "min": 29.2,
+    "re": 90
+   },
+   {
+    "id": "19428937281",
+    "n": "Entraînement aux poids le matin",
+    "t": "WeightTraining",
+    "d": "2026-07-23",
+    "h": "10:37",
+    "km": 0.0,
+    "min": 48.5,
+    "re": 8
+   },
+   {
+    "id": "19407423343",
+    "n": "Marche en soirée",
+    "t": "Walk",
+    "d": "2026-07-21",
+    "h": "19:13",
+    "km": 0.73,
+    "min": 12.0,
+    "re": 2
+   },
+   {
+    "id": "19406152538",
+    "n": "Course à pied en soirée",
+    "t": "Run",
+    "d": "2026-07-21",
+    "h": "18:13",
+    "km": 6.92,
+    "min": 60.1,
+    "re": 24
+   },
+   {
+    "id": "19374402369",
+    "n": "Entraînement dans l'après-midi",
+    "t": "Workout",
+    "d": "2026-07-18",
+    "h": "17:35",
+    "km": 0.0,
+    "min": 4.6,
+    "re": 0
+   },
+   {
+    "id": "19374402364",
+    "n": "Entraînement dans l'après-midi",
+    "t": "Workout",
+    "d": "2026-07-18",
+    "h": "15:14",
+    "km": 0.0,
+    "min": 26.8,
+    "re": 39
+   },
+   {
+    "id": "19342423787",
+    "n": "Marche en soirée",
+    "t": "Walk",
+    "d": "2026-07-16",
+    "h": "20:13",
+    "km": 0.52,
+    "min": 9.3,
+    "re": 1
+   },
+   {
+    "id": "19340178646",
+    "n": "Course à pied en soirée",
+    "t": "Run",
+    "d": "2026-07-16",
+    "h": "19:28",
+    "km": 5.35,
+    "min": 45.3,
+    "re": 11
+   },
+   {
+    "id": "19326550054",
+    "n": "Marche en soirée",
+    "t": "Walk",
+    "d": "2026-07-15",
+    "h": "19:17",
+    "km": 2.53,
+    "min": 33.3,
+    "re": 11
+   },
+   {
+    "id": "19326089428",
+    "n": "Entraînement aux poids dans l'après-midi",
+    "t": "WeightTraining",
+    "d": "2026-07-15",
+    "h": "17:07",
+    "km": 0.0,
+    "min": 130.1,
+    "re": 27
+   },
+   {
+    "id": "19297967271",
+    "n": "Marche en soirée",
+    "t": "Walk",
+    "d": "2026-07-13",
+    "h": "19:13",
+    "km": 2.38,
+    "min": 37.8,
+    "re": 4
+   },
+   {
+    "id": "19296643033",
+    "n": "Marche dans l'après-midi",
+    "t": "Walk",
+    "d": "2026-07-13",
+    "h": "17:33",
+    "km": 3.69,
+    "min": 45.0,
+    "re": 20
+   },
+   {
+    "id": "19296134336",
+    "n": "Entraînement aux poids dans l'après-midi",
+    "t": "WeightTraining",
+    "d": "2026-07-13",
+    "h": "15:53",
+    "km": 0.0,
+    "min": 99.7,
+    "re": 18
+   },
+   {
+    "id": "19271798823",
+    "n": "Entraînement dans l'après-midi",
+    "t": "Workout",
+    "d": "2026-07-11",
+    "h": "17:26",
+    "km": 0.0,
+    "min": 21.5,
+    "re": 5
+   },
+   {
+    "id": "19271178147",
+    "n": "Entraînement dans l'après-midi",
+    "t": "Workout",
+    "d": "2026-07-11",
+    "h": "16:12",
+    "km": 0.0,
+    "min": 16.8,
+    "re": 7
+   },
+   {
+    "id": "19244812820",
+    "n": "Ef vraiment vraiment au ralenti",
+    "t": "Run",
+    "d": "2026-07-09",
+    "h": "17:48",
+    "km": 3.18,
+    "min": 28.0,
+    "re": 10
+   },
+   {
+    "id": "19790542595",
+    "n": "Entraînement aux poids le matin",
+    "t": "WeightTraining",
+    "d": "2026-07-09",
+    "h": "10:36",
+    "km": 0.0,
+    "min": 84.2,
+    "re": 9
+   },
+   {
+    "id": "19230824397",
+    "n": "Séance BikeErg – HYROX (1h06)",
+    "t": "Ride",
+    "d": "2026-07-08",
+    "h": "17:08",
+    "km": 0.0,
+    "min": 65.0,
+    "re": 112
+   },
+   {
+    "id": "19225059085",
+    "n": "Ef chill reprise",
+    "t": "Run",
+    "d": "2026-07-08",
+    "h": "09:02",
+    "km": 3.23,
+    "min": 25.2,
+    "re": 7
+   },
+   {
+    "id": "19211770996",
+    "n": "Entraînement aux poids le matin",
+    "t": "WeightTraining",
+    "d": "2026-07-07",
+    "h": "10:40",
+    "km": 0.0,
+    "min": 59.5,
+    "re": 9
+   },
+   {
+    "id": "19147875063",
+    "n": "Entraînement aux poids le matin",
+    "t": "WeightTraining",
+    "d": "2026-07-02",
+    "h": "10:34",
+    "km": 0.0,
+    "min": 65.4,
+    "re": 7
+   }
+  ]
+ },
+ "ef": {
+  "maj": "2026-10-12",
+  "points": [
+   {
+    "d": "2026-06-18",
+    "allure": "8:07",
+    "fc": 139.5,
+    "ind": 14.73,
+    "zone": "EF chaleur",
+    "note": "29 °C"
+   },
+   {
+    "d": "2026-07-08",
+    "allure": "7:49",
+    "fc": 132.3,
+    "ind": 16.12,
+    "zone": "EF",
+    "note": "3,2 km"
+   },
+   {
+    "d": "2026-07-16",
+    "allure": "8:27",
+    "fc": 131.8,
+    "ind": 14.95,
+    "zone": "EF",
+    "note": ""
+   },
+   {
+    "d": "2026-08-19",
+    "allure": "8:24",
+    "fc": 129.0,
+    "ind": 15.38,
+    "zone": "récup",
+    "note": ""
+   },
+   {
+    "d": "2026-08-23",
+    "allure": "7:16",
+    "fc": 145,
+    "ind": 15.82,
+    "zone": "endurance active",
+    "note": "effort 7/10"
+   },
+   {
+    "d": "2026-08-25",
+    "allure": "7:47",
+    "fc": 130.9,
+    "ind": 16.35,
+    "zone": "EF",
+    "note": ""
+   },
+   {
+    "d": "2026-08-26",
+    "allure": "7:57",
+    "fc": 131.7,
+    "ind": 15.92,
+    "zone": "EF",
+    "note": ""
+   },
+   {
+    "d": "2026-09-02",
+    "allure": "7:53",
+    "fc": 131.9,
+    "ind": 16.02,
+    "zone": "EF",
+    "note": "découplage 8,5 %"
+   },
+   {
+    "d": "2026-09-09",
+    "allure": "7:48",
+    "fc": 132,
+    "ind": 16.2,
+    "zone": "EF",
+    "note": "dernier point de référence"
+   },
+   {
+    "d": "2026-09-11",
+    "allure": "8:07",
+    "fc": 131,
+    "ind": 15.67,
+    "zone": "EF",
+    "note": "J+1 box"
+   },
+   {
+    "d": "2026-09-21",
+    "allure": "7:59",
+    "fc": 139,
+    "ind": 15.02,
+    "zone": "EF",
+    "note": "1re en zone 130–140 · découplage 15 %"
+   }
+  ]
+ },
+ "box": {
+  "maj": "2026-10-12",
+  "items": [
+   {
+    "d": "2026-09-10",
+    "format": "Sled push/pull + renfo + WOD 4 rounds",
+    "duree": "34'51",
+    "fc": "149 / —",
+    "effort": "43"
+   },
+   {
+    "d": "2026-09-12",
+    "format": "2 rounds : 4,8 km course + push press / fentes / snatch",
+    "duree": "42'48",
+    "fc": "166 / —",
+    "effort": "97"
+   },
+   {
+    "d": "2026-09-22",
+    "format": "E6MOM × 3 : row / sled 170 kg / shuttle / ski / lunges",
+    "duree": "35'28",
+    "fc": "166 / 180",
+    "effort": "81"
+   },
+   {
+    "d": "2026-09-24",
+    "format": "E6' × 2 : BBJ + lunges / 1 000 m run / ski + 50 wall balls",
+    "duree": "37'10",
+    "fc": "172 / 181",
+    "effort": "109"
+   },
+   {
+    "d": "2026-09-29",
+    "format": "WOD binôme : ski / sled / 800 m en 4'15 / row / burpees / wall balls",
+    "duree": "36'13",
+    "fc": "161 / 179",
+    "effort": "69"
+   }
+  ]
+ },
+ "coach": {
+  "date": "2026-10-12",
+  "titre": "Point coach — reprise",
+  "texte": "Après 3 semaines off, on repart en course directe sur un format à 2 runs par semaine.",
+  "points": [
+   "Box mardi et jeudi : priorité n°1 de la semaine, 13 jours sans box.",
+   "EF 25' mercredi : premier run depuis le 21/09. FC 130–140, plafond 142.",
+   "Au moindre symptôme (fièvre, courbatures diffuses, gêne thoracique) : pas de box, pas de course, marche seulement.",
+   "Objectif S7 fixé à 6,5 km avant le début de la semaine. S'il n'est pas tenu, on répète la semaine, on ne le baisse pas."
+  ]
+ }
+}
