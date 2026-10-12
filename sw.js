@@ -1,11 +1,11 @@
 // Prépa HYROX — fonctionne hors ligne à la salle.
-// L'app est servie depuis le cache puis rafraîchie en arrière-plan ; data.json passe d'abord par le réseau.
-const CACHE = "prepa-v2";
+// La page et data.json passent d'abord par le réseau (toujours la dernière version), le cache sert hors ligne.
+const CACHE = "prepa-v3";
 const NOTIF = "prepa-notif"; // carte « date → séances du jour », écrite par l'app
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./data.json", "./icons/icon-180.png", "./icons/icon-192.png", "./icons/icon-512.png"];
 
 self.addEventListener("install", e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL.map(u => new Request(u, { cache: "reload" })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", e => {
@@ -15,10 +15,12 @@ self.addEventListener("activate", e => {
 self.addEventListener("fetch", e => {
   const url = new URL(e.request.url);
   if (e.request.method !== "GET" || url.origin !== location.origin) return;
-  if (url.pathname.endsWith("/data.json")) {
+  const page = e.request.mode === "navigate" || url.pathname.endsWith("/") || url.pathname.endsWith("/index.html");
+  if (page || url.pathname.endsWith("/data.json")) {
+    const key = page ? "./index.html" : "./data.json";
     e.respondWith(fetch(e.request, { cache: "no-store" }).then(r => {
-      const copy = r.clone(); caches.open(CACHE).then(c => c.put("./data.json", copy)); return r;
-    }).catch(() => caches.match("./data.json")));
+      if (r.ok) { const copy = r.clone(); caches.open(CACHE).then(c => c.put(key, copy)); } return r;
+    }).catch(() => caches.match(key)));
     return;
   }
   e.respondWith(caches.match(e.request).then(hit => {
