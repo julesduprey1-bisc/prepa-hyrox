@@ -221,6 +221,15 @@ button.set[aria-pressed="true"] .lbl{text-decoration:line-through}
 .recap pre{white-space:pre-wrap;font:400 15px/1.5 var(--font-b);margin:0}
 .reset{display:block;margin:6px auto 0;background:none;border:none;color:var(--muted);font:600 15px var(--font-b);text-decoration:underline;padding:10px;cursor:pointer}
 @media (prefers-reduced-motion:reduce){.sbar span{transition:none}}
+/* Reporter / annuler */
+.it.cancel .txt strong{text-decoration:line-through;color:var(--muted)}
+.st.annule{border-style:dashed}
+.chip.moved{background:var(--band);color:var(--run)}
+.edit{display:flex;flex-direction:column;gap:8px;margin-top:6px;padding:10px;border-radius:10px;background:var(--soft)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chipbtn{min-height:40px;padding:0 12px;border-radius:999px;border:2px solid var(--line);background:var(--panel);cursor:pointer;font:600 15px var(--font-b)}
+.chipbtn.danger{border-color:var(--miss);color:var(--miss)}
+.small-link{font-size:14px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -298,6 +307,22 @@ function daysOf(w){
  for(const i in (w.notes||{})){const it=D[i].items[0];it.note=w.notes[i]}
  return D;
 }
+let MODS=ld("prepa-modifs",{}),EDIT=null,CONFIRM=null;
+function effDays(w){
+ const base=daysOf(w);base.forEach(d=>d.items.forEach((it,i)=>{it.key=d.date+"|"+i}));
+ const D=base.map(d=>({date:d.date,items:[]}));
+ base.forEach(d=>d.items.forEach(it=>{const m=MODS[it.key];
+  if(m&&m.s==="reporte"){const t=D.find(x=>x.date===m.to);if(t){t.items.push({...it,moved:d.date});return}}
+  D.find(x=>x.date===d.date).items.push(m&&m.s==="annule"?{...it,cancel:true}:it)}));
+ return D}
+function modLabel(key){const [d,i]=key.split("|");const w=WEEKS.find(w=>d>=w.start&&d<=addD(w.start,6));if(!w)return null;
+ const it=daysOf(w).find(x=>x.date===d).items[+i];return it?it.t:null}
+function saveMods(){sv("prepa-modifs",MODS);writeNotif()}
+function notifLine(x){let s=x.t;if(x.k==="run")s+=" · FC 130–140, plafond 142";if(x.k==="box")s+=" (fixe)";if(x.moved)s+=` · reporté du ${dm(x.moved)}`;if(x.note)s+=" — "+x.note;return s}
+function writeNotif(){if(!("caches" in window))return;const map={};
+ WEEKS.forEach(w=>effDays(w).forEach((d,i)=>{const its=d.items.filter(x=>!x.cancel&&x.k!=="repos");
+  map[d.date]={title:`${JOURSL[i][0].toUpperCase()+JOURSL[i].slice(1)} ${dm(d.date)} · S${w.s}`,body:its.length?its.map(notifLine).join("\n"):"Repos ou marche libre."}}));
+ caches.open("prepa-notif").then(c=>c.put("./notif.json",new Response(JSON.stringify(map),{headers:{"Content-Type":"application/json"}}))).catch(()=>{})}
 const PHASES=[
  {n:"0 bis · Redémarrage",a:"2026-10-12",b:"2026-11-22",v:"6,5 → 10 km/sem",f:"2 runs"},
  {n:"1 · Base aérobie",a:"2026-11-23",b:"2027-01-03",v:"10 → 15 km/sem",f:"2 runs, +1 tempo si conditions remplies"},
@@ -368,14 +393,27 @@ function itemDetail(it){
 }
 function statusOf(date,it,A){
  if(it.k==="repos")return null;
+ if(it.cancel)return ["annule","Annulé"];
  const done=doneOn(date,it.k,A);
  if(done)return ["fait","✓ Fait"];
  if(date<TODAY)return ["manque","✕ Manqué"];
  if(date===TODAY)return ["jour","● Aujourd'hui"];
  return ["","À venir"];
 }
+function itemRow(d,it,isT,s,w){
+ const chips=(it.moved?`<span class="chip moved">Reporté du ${dm(it.moved)}</span>`:"")+(it.lock?`<span class="chip lock">Fixe</span>`:it.cut?`<span class="chip">Coupe ${it.cut}</span>`:"");
+ let h=`<div class="it ${it.cancel?"cancel":""}"><div class="txt"><strong>${chips}${esc(it.t)}</strong>
+  ${it.note&&!it.cancel?`<span class="small">${esc(it.note)}</span>`:""}${it.k==="run"&&!it.cancel?`<span class="muted small">${it.ld?"6 lignes droites · ":""}${it.ref?"Protocole de référence · ":""}FC 130–140</span>`:""}
+  <span class="row" style="gap:14px">${it.salle&&!isT&&!it.cancel?`<button class="link" data-salle="${it.salle}">Checklist</button>`:""}${it.k!=="repos"&&!(s&&s[0]==="fait")?`<button class="link small-link" data-edit="${it.key}">${EDIT===it.key?"Fermer":"Reporter / annuler"}</button>`:""}</span></div>${s?`<span class="st ${s[0]}">${s[1]}</span>`:""}</div>`;
+ if(EDIT===it.key){
+  const from=TODAY>w.start?TODAY:w.start,end=addD(w.start,6),opts=[];
+  for(let x=from;x<=end;x=addD(x,1))if(x!==d.date)opts.push(x);
+  h+=`<div class="edit">${opts.length?`<span class="small muted">Reporter à :</span><div class="chips">${opts.map(x=>`<button class="chipbtn" data-move="${it.key}" data-to="${x}">${JOURS[(parse(x).getDay()+6)%7]} ${dm(x)}</button>`).join("")}</div>`:`<span class="small muted">Plus de jour libre cette semaine pour la reporter.</span>`}
+   <div class="chips">${it.cancel?"":`<button class="chipbtn danger" data-cancel="${it.key}">Annuler la séance</button>`}${MODS[it.key]?`<button class="chipbtn" data-restore="${it.key}">Remettre comme prévu</button>`:""}</div>
+   ${CONFIRM===it.key?`<div class="alert warn"><strong>Séance fixe</strong><p class="small">Les deux box et les deux EF ne sautent jamais : reporte-la plutôt. L'objectif de la semaine reste le même.</p><div><button class="chipbtn danger" data-cancelok="${it.key}">Annuler quand même</button></div></div>`:""}</div>`}
+ return h}
 function renderSemaine(){
- const A=acts(),w=WEEKS[WI],D=daysOf(w),st=weekStat(w,A),e=addD(w.start,6);
+ const A=acts(),w=WEEKS[WI],D=effDays(w),st=weekStat(w,A),e=addD(w.start,6);
  const todayR=RESS.find(r=>r.date===TODAY);
  const sympt=todayR&&todayR.symptomes;
  const pct=Math.min(100,st.km/w.km*100);
@@ -390,7 +428,7 @@ function renderSemaine(){
  // Aujourd'hui
  const td=D.find(d=>d.date===TODAY);
  if(td){h+=`<div class="block"><span class="eyebrow">Aujourd'hui</span><div class="todo">${td.items.map(it=>{const s=statusOf(TODAY,it,A);
-   return `<div class="card k-${it.k}"><div class="row between"><h3>${esc(it.t)}</h3>${s?`<span class="st ${s[0]}">${s[1]}</span>`:""}</div>
+   return `<div class="card k-${it.k}"><div class="row between"><h3>${it.moved?`<span class="chip moved">Reporté du ${dm(it.moved)}</span>`:""}${esc(it.t)}</h3>${s?`<span class="st ${s[0]}">${s[1]}</span>`:""}</div>
    ${it.note?`<p><strong>${esc(it.note)}</strong></p>`:""}${itemDetail(it)?`<p class="muted small">${esc(itemDetail(it))}</p>`:""}
    ${it.ref?`<ol class="proto">${REF_PROTO.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`:""}
    ${it.salle?`<div><button class="btn" data-salle="${it.salle}">Ouvrir la checklist</button></div>`:""}</div>`}).join("")}</div></div>`}
@@ -402,10 +440,8 @@ function renderSemaine(){
   <div class="tile"><span class="eyebrow">Muscu</span><b>${st.muscu}<small> / 3</small></b><span class="muted small">ajustables</span></div></div>`;
  // Jours
  h+=`<div class="block" style="gap:0">${D.map((d,i)=>{const isT=d.date===TODAY;
-   return `<div class="day ${isT?"today":""}"><div class="d">${JOURS[i]}<small class="num">${dm(d.date)}</small></div><div class="items">${d.items.map(it=>{const s=statusOf(d.date,it,A);
-     return `<div class="it"><div class="txt"><strong>${it.lock?`<span class="chip lock">Fixe</span>`:it.cut?`<span class="chip">Coupe ${it.cut}</span>`:""}${esc(it.t)}</strong>
-     ${it.note?`<span class="small">${esc(it.note)}</span>`:""}${it.k==="run"?`<span class="muted small">${it.ld?"6 lignes droites · ":""}${it.ref?"Protocole de référence · ":""}FC 130–140</span>`:""}
-     ${it.salle&&!isT?`<button class="link" data-salle="${it.salle}">Checklist</button>`:""}</div>${s?`<span class="st ${s[0]}">${s[1]}</span>`:""}</div>`}).join("")}</div></div>`}).join("")}</div>`;
+   return `<div class="day ${isT?"today":""}"><div class="d">${JOURS[i]}<small class="num">${dm(d.date)}</small></div><div class="items">${d.items.length?"":`<span class="muted small">Rien de prévu</span>`}${d.items.map(it=>{const s=statusOf(d.date,it,A);
+     return itemRow(d,it,isT,s,w)}).join("")}</div></div>`}).join("")}</div>`;
  h+=`<p class="small muted">Si la semaine déraille, on coupe par le bas : Push du lundi, puis Pull, puis jambes. Les deux box et les deux EF ne sautent jamais.</p>`;
  // Compteurs
  const C=[["Dernier run","run",7,4],["Dernière box","box",6,4],["Dernière muscu","muscu",7,4]].map(([l,k,bad,warn])=>{const d=lastOf(k,A);const n=d?diff(d,TODAY):null;
@@ -420,7 +456,8 @@ function renderSemaine(){
   <label class="check"><input type="checkbox" id="sympt" ${sy?"checked":""}> Fièvre, courbatures diffuses ou gêne thoracique</label>
   <textarea id="rnote" placeholder="Sommeil, douleurs, fatigue…">${esc(NOTE_DRAFT||(todayR&&FORME==null?todayR.note||"":""))}</textarea>
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
- h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle et ressentis des 7 derniers jours, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
+ h+=pushBlock();
+ h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis et séances reportées ou annulées des 7 derniers jours, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -429,8 +466,41 @@ function renderSemaine(){
  $("#rnote").oninput=e=>{NOTE_DRAFT=e.target.value};
  $("#rsave").onclick=saveRessenti;
  $("#sendc").onclick=shareCoach;
+ el.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>{EDIT=EDIT===b.dataset.edit?null:b.dataset.edit;CONFIRM=null;renderSemaine()});
+ el.querySelectorAll("[data-move]").forEach(b=>b.onclick=()=>{MODS[b.dataset.move]={s:"reporte",to:b.dataset.to,le:TODAY};EDIT=null;CONFIRM=null;saveMods();renderSemaine()});
+ el.querySelectorAll("[data-cancel]").forEach(b=>b.onclick=()=>{const k=b.dataset.cancel;const it=effDays(w).flatMap(x=>x.items).find(x=>x.key===k);
+  if(it&&it.lock&&CONFIRM!==k){CONFIRM=k;renderSemaine();return}MODS[k]={s:"annule",le:TODAY};EDIT=null;CONFIRM=null;saveMods();renderSemaine()});
+ el.querySelectorAll("[data-cancelok]").forEach(b=>b.onclick=()=>{MODS[b.dataset.cancelok]={s:"annule",le:TODAY};EDIT=null;CONFIRM=null;saveMods();renderSemaine()});
+ el.querySelectorAll("[data-restore]").forEach(b=>b.onclick=()=>{delete MODS[b.dataset.restore];EDIT=null;CONFIRM=null;saveMods();renderSemaine()});
+ const pe=$("#penable");if(pe)pe.onclick=enablePush;
+ const ps=$("#pshare");if(ps)ps.onclick=sharePush;
+ const pt=$("#ptest");if(pt)pt.onclick=testPush;
  bindApprove(el);
 }
+const VAPID_PUBLIC="BMi72lKEVWCC7Ymu80I9E4eUIpnHs1gVSc-221VU7y8aN61nvd70qnqisc8Ufj-jX0fXCHSiLiw4sVRctQXa6zU";
+let PUSH=ld("prepa-push",null),PUSH_MSG="";
+const STANDALONE=matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+function pushBlock(){
+ let body;
+ if(!STANDALONE)body=`<p class="small">Ajoute d'abord l'app à l'écran d'accueil (Safari › Partager › Sur l'écran d'accueil), puis ouvre-la depuis l'icône.</p>`;
+ else if(!("PushManager" in window)||!("Notification" in window))body=`<p class="small">Ton iPhone doit être en iOS 16.4 ou plus récent.</p>`;
+ else if(Notification.permission==="denied")body=`<p class="small">Notifications refusées. Réactive-les dans Réglages › Notifications › Prépa HYROX.</p>`;
+ else if(!PUSH)body=`<p class="small muted">Chaque matin vers 7 h : tes séances du jour, reports compris.</p><div><button class="btn" id="penable">Activer la notification du matin</button></div>`;
+ else body=`<p class="small">Notifications autorisées sur ce téléphone ✓. Envoie-moi le code une seule fois pour que je branche l'envoi du matin.</p><div class="row"><button class="btn" id="pshare">Envoyer le code au coach</button><button class="btn ghost" id="ptest">Aperçu</button></div>`;
+ return `<div class="block"><h3>Notification du matin</h3>${body}<span class="muted small" id="pmsg">${esc(PUSH_MSG)}</span></div>`}
+function b64u(t){const p="=".repeat((4-t.length%4)%4);const b=atob((t+p).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from(b,c=>c.charCodeAt(0))}
+async function enablePush(){
+ try{const perm=await Notification.requestPermission();if(perm!=="granted"){PUSH_MSG="Autorisation refusée.";renderSemaine();return}
+  const reg=await navigator.serviceWorker.ready;let sub=await reg.pushManager.getSubscription();
+  if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID_PUBLIC)});
+  PUSH=JSON.stringify(sub);sv("prepa-push",PUSH);PUSH_MSG="";writeNotif()}
+ catch(e){PUSH_MSG="Activation impossible : "+(e&&e.message||e)}
+ renderSemaine()}
+async function sharePush(){const t="Code notification Prépa HYROX :\n"+PUSH,m=$("#pmsg");
+ if(navigator.share){try{await navigator.share({text:t});m.textContent="Envoyé.";return}catch(e){if(e&&e.name==="AbortError")return}}
+ try{await navigator.clipboard.writeText(t);m.textContent="Copié : colle-le dans la conversation Claude."}catch(e){m.textContent="Copie impossible ici."}}
+async function testPush(){try{const reg=await navigator.serviceWorker.ready;const r=await (await caches.open("prepa-notif")).match("./notif.json");const m=r?(await r.json())[TODAY]:null;
+ await reg.showNotification(m?m.title:"Prépa HYROX",{body:m?m.body:"Ouvre l'app pour voir ta séance du jour.",icon:"icons/icon-192.png",tag:"jour"})}catch(e){$("#pmsg").textContent="Aperçu impossible : "+(e&&e.message||e)}}
 function saveRessenti(){
  const f=FORME??(RESS.find(r=>r.date===TODAY)||{}).forme;
  if(!f){RESS_MSG="Choisis une note de forme d'abord.";renderSemaine();return}
@@ -441,6 +511,8 @@ function coachText(){const from=addD(TODAY,-6);
  const se=SEANCES.filter(s=>s.date>=from).slice().reverse(),re=RESS.filter(r=>r.date>=from).slice().reverse();
  let t=`Prépa HYROX — mes saisies du ${dm(from)} au ${dm(TODAY)}\n`;
  t+="\nSéances salle :\n"+(se.length?se.map(s=>`- ${dm(s.date)} ${s.titre}\n`+(s.lignes||[]).map(l=>"   "+l).join("\n")).join("\n"):"- aucune");
+ const mo=Object.entries(MODS).filter(([k])=>k.split("|")[0]>=from).sort().map(([k,m])=>{const t=modLabel(k);return t?`- ${t} du ${dm(k.split("|")[0])} : ${m.s==="annule"?"annulée":"reportée au "+dm(m.to)}`:null}).filter(Boolean);
+ t+="\n\nSéances reportées / annulées :\n"+(mo.length?mo.join("\n"):"- aucune");
  t+="\n\nRessenti :\n"+(re.length?re.map(r=>`- ${dm(r.date)} forme ${r.forme}/5${r.symptomes?" · symptômes":""}${r.note?" · "+r.note:""}`).join("\n"):"- aucun");
  return t}
 async function shareCoach(){const t=coachText(),m=$("#sendmsg");
@@ -674,6 +746,7 @@ function bindApprove(){}
 show(VIEW);renderSalle();renderAll();
 fetch("data.json",{cache:"no-store"}).then(r=>r.json()).then(d=>{SNAP=d.strava||null;EF=d.ef||null;BOX=d.box||null;COACH=d.coach||null;MAJ=d.maj||null;renderAll()}).catch(()=>renderAll());
 if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+writeNotif();
 </script>
 </body>
 </html>

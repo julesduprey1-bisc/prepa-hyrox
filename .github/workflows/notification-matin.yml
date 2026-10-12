@@ -1,0 +1,38 @@
+name: Notification du matin
+
+on:
+  schedule:
+    # 7 h à Paris : 05:00 UTC en heure d'été, 06:00 UTC en heure d'hiver.
+    - cron: "0 5 * * *"
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  envoyer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Garder seulement le créneau de 7 h à Paris
+        id: heure
+        run: |
+          OFFSET=$(TZ=Europe/Paris date +%z)
+          GO=no
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then GO=yes; fi
+          if [ "${{ github.event.schedule }}" = "0 5 * * *" ] && [ "$OFFSET" = "+0200" ]; then GO=yes; fi
+          if [ "${{ github.event.schedule }}" = "0 6 * * *" ] && [ "$OFFSET" = "+0100" ]; then GO=yes; fi
+          echo "go=$GO" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        if: steps.heure.outputs.go == 'yes'
+      - uses: actions/setup-python@v5
+        if: steps.heure.outputs.go == 'yes'
+        with:
+          python-version: "3.12"
+      - name: Envoyer
+        if: steps.heure.outputs.go == 'yes'
+        env:
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+        run: |
+          pip install --quiet pywebpush
+          python push/envoyer.py
