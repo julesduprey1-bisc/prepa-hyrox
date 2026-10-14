@@ -358,7 +358,7 @@ function weekStat(w,A){const e=addD(w.start,6);const inW=A.filter(a=>a.d>=w.star
  return {km:runs.reduce((s,a)=>s+a.km,0),runs:runs.length,box:inW.filter(a=>a.k==="box").length,muscu:md.size,ended:TODAY>e,started:TODAY>=w.start}}
 function lastOf(k,A){let a=A.find(x=>x.k===k);let d=a?a.d:null;
  if(k==="muscu"&&SEANCES.length){const s=SEANCES[0].date;if(!d||s>d)d=s}return d}
-function srcLabel(){const m=SNAP&&SNAP.maj?dm(SNAP.maj):null;return {c:m?"live":"warn",t:m?"Données Strava du "+m+" · mises à jour chaque dimanche":"Chargement des données…"}}
+function srcLabel(){const m=SNAP&&SNAP.maj?dm(SNAP.maj)+(SNAP.maj.length>10?" à "+SNAP.maj.slice(11,16).replace(":","h"):""):null;return {c:m?"live":"warn",t:m?"Strava vérifié le "+m+" · contrôle chaque soir vers 22h":"Chargement des données…"}}
 function srcHTML(){const s=srcLabel();return `<span class="src ${s.c}"><i></i>${esc(s.t)}${s.btn?` <button type="button" data-act="approve">${esc(s.btn)}</button>`:""}</span>`}
 
 /* ================= Navigation ================= */
@@ -458,7 +458,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis et séances reportées ou annulées des 7 derniers jours, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 3 · 12/10</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 4 · 14/10</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});

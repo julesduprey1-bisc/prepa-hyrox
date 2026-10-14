@@ -1,9 +1,39 @@
 {
- "maj": "2026-10-12",
+ "maj": "2026-10-14T16:15",
  "strava": {
-  "maj": "2026-10-12",
+  "maj": "2026-10-14T16:15",
   "source": "Strava list_activities, du 01/07 au 12/10/2026",
   "items": [
+   {
+    "id": "20570779993",
+    "n": "🔥 HYROX – 3 ON / 1 OFF × 3",
+    "t": "HighIntensityIntervalTraining",
+    "d": "2026-10-13",
+    "h": "18:30",
+    "km": 0.0,
+    "min": 40.6,
+    "re": 110
+   },
+   {
+    "id": "20565000190",
+    "n": "Entraînement aux poids le matin",
+    "t": "WeightTraining",
+    "d": "2026-10-13",
+    "h": "10:39",
+    "km": 0.0,
+    "min": 61.8,
+    "re": 15
+   },
+   {
+    "id": "20556435560",
+    "n": "Marche dans l'après-midi",
+    "t": "Walk",
+    "d": "2026-10-12",
+    "h": "16:52",
+    "km": 3.14,
+    "min": 47.7,
+    "re": 5
+   },
    {
     "id": "20534125560",
     "n": "Marche en soirée",
