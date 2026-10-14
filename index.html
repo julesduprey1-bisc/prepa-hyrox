@@ -230,6 +230,11 @@ button.set[aria-pressed="true"] .lbl{text-decoration:line-through}
 .chipbtn{min-height:40px;padding:0 12px;border-radius:999px;border:2px solid var(--line);background:var(--panel);cursor:pointer;font:600 15px var(--font-b)}
 .chipbtn.danger{border-color:var(--miss);color:var(--miss)}
 .small-link{font-size:14px;color:var(--muted)}
+/* Blocs facultatifs : oui / non */
+.optrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 10px}
+.optrow .chipbtn[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.ex.skipped{border-left-color:var(--line)}
+.ex.skipped h2{color:var(--muted)}
 </style>
 </head>
 <body>
@@ -458,7 +463,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis et séances reportées ou annulées des 7 derniers jours, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 5 · 14/10</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 6 · 14/10</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -614,8 +619,8 @@ function renderObjectif(){
 /* ================= Vue Salle (checklists, état gardé sur cet appareil) ================= */
 const L=(n,k)=>({n,k});
 const rep=(kg,r,n)=>Array.from({length:n},()=>[kg,r]);
-const CARDIO={t:"Cardio : marche inclinée ou escalier",rest:"aucun — effort continu",h:"45 à 60 min, FC 125–140. Marche inclinée par défaut : pente 8–12 %, 5–5,5 km/h. L'escalier charge plus mollets et quadris : garde-le pour les jours push et pull. Les jours où une EF est prévue, elle passe avant.",l:[],u:"min",rs:5,s:[[[],45]]};
-const ABS={t:"Circuit abdos",rest:"1'30 entre les tours",h:"Zéro repos entre les exercices, 1'30 après chaque tour. Bas du dos toujours plaqué ou neutre : zéro sit-up, zéro crunch lesté.",
+const CARDIO={opt:true,t:"Cardio : marche inclinée ou escalier",rest:"aucun — effort continu",h:"45 à 60 min, FC 125–140. Marche inclinée par défaut : pente 8–12 %, 5–5,5 km/h. L'escalier charge plus mollets et quadris : garde-le pour les jours push et pull. Les jours où une EF est prévue, elle passe avant.",l:[],u:"min",rs:5,s:[[[],45]]};
+const ABS={opt:true,t:"Circuit abdos",rest:"1'30 entre les tours",h:"Zéro repos entre les exercices, 1'30 après chaque tour. Bas du dos toujours plaqué ou neutre : zéro sit-up, zéro crunch lesté.",
  list:["Crunch touche genou puis cheville — 20 (épaules qui décollent, bas du dos au sol)","Relevés de jambes — 15, bas du dos plaqué","Mason twist — 10 (5/côté) sans poids, pieds au sol, buste droit. Mieux : Pallof press 10/côté","Dead bug — 10 par côté, lent","Side bend — 10 par côté, haltère léger (12 kg max), sans pencher en avant","Gainage — planche 45 s, puis latéral 30 s par côté"],
  l:[],s:[[[],null],[[],null],[[],null]]};
 const S={
@@ -634,7 +639,7 @@ const S={
   {t:"Suspension barre (grip)",rest:"1'30",h:"Avant le bloc biceps, grip encore frais. Le plus longtemps possible, puis règle la durée tenue : c’est ton sled pull et ton farmers carry.",l:[],u:"s",rs:5,s:[[[],45],[[],45]]},
   {t:"Superset biceps",rest:"1'30 entre les tours",h:"Zéro repos entre les deux. 1) Curl mur — 10 reps, poids d’un haltère, coudes collés au mur, zéro élan. 2) 21 barre EZ — poids total barre comprise, 7 bas → mi-course, 7 mi-course → haut, 7 complètes. La barre EZ sera plus légère qu’en exercice isolé : c’est la pré-fatigue, pas une régression.",l:[L("Curl",2),L("EZ",2.5)],s:rep([10,15],null,3)},
   {t:"Curl unilatéral poulie",rest:"1'",h:"Chiffre affiché sur la colonne. 12 reps par bras, coude fixe le long du corps, descente lente. Finisher : charge légère, contraction propre.",l:[L("",2.5)],s:[[[5],12],[[7.5],10],[[7.5],10]]},
-  {t:"Renfo lombaire",rest:"1' entre les tours",h:"Zéro repos entre les 4 exercices, 1' après chaque tour. Charge légère, qualité avant tout. Aucune douleur ne doit apparaître : si le bas du dos tire, tu réduis l'amplitude ou tu stoppes.",
+  {opt:true,t:"Renfo lombaire",rest:"1' entre les tours",h:"Zéro repos entre les 4 exercices, 1' après chaque tour. Charge légère, qualité avant tout. Aucune douleur ne doit apparaître : si le bas du dos tire, tu réduis l'amplitude ou tu stoppes.",
    list:["Hip hinge / good morning barre à vide — 12 reps, dos neutre, charnière à la hanche","Bird dog — 8 par côté, 3 s de maintien, bassin immobile","Extension lombaire sur banc 45° — 12 reps, pas d'hyperextension en haut","Pont fessier — 12 reps, pause 2 s en haut"],
    l:[],s:[[[],null],[[],null],[[],null]]},
   CARDIO,
@@ -690,7 +695,11 @@ function summary(ex,v){const a=[];
  if(ex.l.length)a.push(ex.l.map((l,m)=>(l.n?l.n+" ":"")+fmtK(v.kg[m])+" kg").join(" · "));
  if(v.r!=null)a.push((ex.l.length?"× ":"")+v.r+" "+(ex.u||"reps"));
  return a.join(" ")}
-function recapLines(){const sess=S[cur];return sess.ex.map((ex,i)=>{const sets=ex.s.map((_,j)=>summary(ex,val(cur,i,j))).filter(Boolean);return ex.t+(sets.length?" : "+sets.join(" / "):" : fait")})}
+function skipMap(id){const x=st[id];return x.skip&&x.skip.date===TODAY?x.skip.m:{}}
+function efToday(){const w=WEEKS.find(w=>TODAY>=w.start&&TODAY<=addD(w.start,6));if(!w)return false;const d=effDays(w).find(x=>x.date===TODAY);return !!d&&d.items.some(x=>x.k==="run"&&!x.cancel)}
+function isSkipped(id,i){const ex=S[id].ex[i];if(!ex.opt)return false;const m=skipMap(id);if(i in m)return m[i];return ex===CARDIO&&efToday()}
+function setSkip(id,i,v){const x=st[id];if(!x.skip||x.skip.date!==TODAY)x.skip={date:TODAY,m:{}};x.skip.m[i]=v;saveSt();renderSalle()}
+function recapLines(){const sess=S[cur];return sess.ex.map((ex,i)=>{if(isSkipped(cur,i))return ex.t+" : non fait";const sets=ex.s.map((_,j)=>summary(ex,val(cur,i,j))).filter(Boolean);return ex.t+(sets.length?" : "+sets.join(" / "):" : fait")})}
 function saveSeance(){const sess=S[cur];const rec={date:TODAY,seance:cur,titre:sess.title,lignes:recapLines(),enregistreLe:new Date().toISOString()};
  SEANCES=[rec,...SEANCES.filter(x=>!(x.date===TODAY&&x.seance===cur))].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,80);sv("prepa-seances",SEANCES);
  SAVE_MSG="Enregistrée. Envoie-la moi depuis l'onglet Semaine.";renderSalle();renderSemaine()}
@@ -700,11 +709,20 @@ function renderSalle(){
   b.onclick=()=>{cur=id;SAVE_MSG="";sv("salle-tab",id);sv("salle-tab-day",now.toDateString());renderSalle();window.scrollTo(0,0)};tabs.appendChild(b)}
  const sess=S[cur],s=st[cur],done=new Set(s.done);
  $("#stitle").textContent=sess.title;list.innerHTML="";
- const total=sess.ex.reduce((n,e)=>n+e.s.length,0);
+ const live=sess.ex.map((_,i)=>!isSkipped(cur,i));
+ const total=sess.ex.reduce((n,e,i)=>n+(live[i]?e.s.length:0),0);
+ const doneN=sess.ex.reduce((n,e,i)=>n+(live[i]?e.s.filter((_,j)=>done.has(i+"-"+j)).length:0),0);
  sess.ex.forEach((ex,i)=>{
   const sec=document.createElement("div");sec.className="ex";
-  if(ex.s.every((_,j)=>done.has(i+"-"+j)))sec.classList.add("complete");
-  sec.innerHTML=`<h2>${ex.t}</h2>${ex.rest?`<p class="rest">Repos : ${ex.rest}</p>`:""}<p class="hint">${ex.h}</p>${ex.list?`<ol class="circ">${ex.list.map(x=>`<li>${x}</li>`).join("")}</ol>`:""}`;
+  if(!live[i])sec.classList.add("skipped");
+  else if(ex.s.every((_,j)=>done.has(i+"-"+j)))sec.classList.add("complete");
+  sec.innerHTML=`<h2>${ex.t}</h2>${ex.rest&&live[i]?`<p class="rest">Repos : ${ex.rest}</p>`:""}${live[i]?`<p class="hint">${ex.h}</p>${ex.list?`<ol class="circ">${ex.list.map(x=>`<li>${x}</li>`).join("")}</ol>`:""}`:""}`;
+  if(ex.opt){const row=document.createElement("div");row.className="optrow";
+   const q=document.createElement("span");q.className="small";q.textContent="Au programme aujourd'hui ?";row.appendChild(q);
+   [["Oui",false],["Non",true]].forEach(([t,v])=>{const b=document.createElement("button");b.type="button";b.className="chipbtn";b.textContent=t;b.setAttribute("aria-pressed",isSkipped(cur,i)===v);b.onclick=()=>setSkip(cur,i,v);row.appendChild(b)});
+   if(ex===CARDIO&&efToday()&&!(i in skipMap(cur))){const n=document.createElement("span");n.className="small muted";n.textContent="Non par défaut : EF prévue aujourd'hui.";row.appendChild(n)}
+   const h2=sec.querySelector("h2");h2.after(row);
+   if(!live[i]){const n=document.createElement("p");n.className="small muted";n.textContent="Pas fait aujourd'hui : ne compte pas dans la séance.";sec.appendChild(n);list.appendChild(sec);return}}
   ex.s.forEach((_,j)=>{
    const id=i+"-"+j,v=val(cur,i,j),blk=document.createElement("div");blk.className="setblk";
    const b=document.createElement("button");b.className="set";b.setAttribute("aria-pressed",done.has(id));
@@ -721,7 +739,7 @@ function renderSalle(){
    if(ctl.children.length)blk.appendChild(ctl);
    sec.appendChild(blk)});
   list.appendChild(sec)});
- if(done.size===total){
+ if(total>0&&doneN===total){
   const txt=sess.title+" — "+now.toLocaleDateString("fr-FR")+"\n"+recapLines().join("\n");
   const rc=document.createElement("div");rc.className="recap";
   rc.innerHTML=`<h2>Séance terminée</h2><pre></pre><div class="row"><button class="btn" id="ssave">Enregistrer dans mon suivi</button><button class="btn ghost" id="scopy">Copier le récap</button></div><p class="muted small" id="smsg"></p>`;
@@ -731,10 +749,10 @@ function renderSalle(){
   rc.querySelector("#scopy").onclick=()=>{navigator.clipboard.writeText(txt).then(()=>{rc.querySelector("#smsg").textContent="Récap copié."}).catch(()=>{const r=document.createRange();r.selectNodeContents(rc.querySelector("pre"));const sel=getSelection();sel.removeAllRanges();sel.addRange(r);rc.querySelector("#smsg").textContent="Texte sélectionné : copie-le."})};
   list.prepend(rc)}
  const r=document.createElement("button");r.className="reset";r.textContent="Nouvelle séance (décoche tout, garde tes charges)";
- r.onclick=()=>{s.done=[];SAVE_MSG="";saveSt();renderSalle()};list.appendChild(r);
- $("#sfill").style.width=(done.size/total*100)+"%";
- $("#scount").textContent=done.size+" / "+total+" séries";
- $("#sstatus").textContent=done.size===total?"Séance terminée":"";
+ r.onclick=()=>{s.done=[];s.skip=null;SAVE_MSG="";saveSt();renderSalle()};list.appendChild(r);
+ $("#sfill").style.width=(total?doneN/total*100:0)+"%";
+ $("#scount").textContent=doneN+" / "+total+" séries";
+ $("#sstatus").textContent=total>0&&doneN===total?"Séance terminée":"";
  renderSaved()}
 function renderSaved(){
  const el=$("#ssaved");
