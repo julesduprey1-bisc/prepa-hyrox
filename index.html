@@ -458,7 +458,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis et séances reportées ou annulées des 7 derniers jours, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 4 · 14/10</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 5 · 14/10</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -631,7 +631,7 @@ const S={
   {t:"Rowing barre",rest:"2'",h:"Poids total, barre comprise (barre olympique 20 kg). Premier exercice : 2 séries d’échauffement légères avant la série 1. Dos neutre, buste à 45°. Si le lombaire tire, stop et passe au bûcheron.",l:[L("",5)],s:[[[40],10],[[50],10],[[60],10],[[70],7]]},
   {t:"Superset tirages",rest:"1'30 entre les tours",h:"Chiffre affiché sur la colonne. Vertical 10 reps puis horizontal 10 reps, sans repos entre les deux.",l:[L("Vert.",5),L("Horiz.",5)],s:[[[45,40],null],[[50,45],null],[[55,50],null],[[60,55],null]]},
   {t:"Rowing bûcheron",rest:"1'30",h:"Poids d’un haltère. Reps par bras, genou sur le banc, pas de repos entre les deux bras.",l:[L("",2)],s:[[[30],10],[[30],10],[[36],7]]},
-  {t:"Suspension barre (grip)",rest:"1'30",h:"Avant le bloc biceps, grip encore frais. Le plus longtemps possible : c’est ton sled pull et ton farmers carry.",l:[],s:[[[],null],[[],null]]},
+  {t:"Suspension barre (grip)",rest:"1'30",h:"Avant le bloc biceps, grip encore frais. Le plus longtemps possible, puis règle la durée tenue : c’est ton sled pull et ton farmers carry.",l:[],u:"s",rs:5,s:[[[],45],[[],45]]},
   {t:"Superset biceps",rest:"1'30 entre les tours",h:"Zéro repos entre les deux. 1) Curl mur — 10 reps, poids d’un haltère, coudes collés au mur, zéro élan. 2) 21 barre EZ — poids total barre comprise, 7 bas → mi-course, 7 mi-course → haut, 7 complètes. La barre EZ sera plus légère qu’en exercice isolé : c’est la pré-fatigue, pas une régression.",l:[L("Curl",2),L("EZ",2.5)],s:rep([10,15],null,3)},
   {t:"Curl unilatéral poulie",rest:"1'",h:"Chiffre affiché sur la colonne. 12 reps par bras, coude fixe le long du corps, descente lente. Finisher : charge légère, contraction propre.",l:[L("",2.5)],s:[[[5],12],[[7.5],10],[[7.5],10]]},
   {t:"Renfo lombaire",rest:"1' entre les tours",h:"Zéro repos entre les 4 exercices, 1' après chaque tour. Charge légère, qualité avant tout. Aucune douleur ne doit apparaître : si le bas du dos tire, tu réduis l'amplitude ou tu stoppes.",
@@ -717,7 +717,7 @@ function renderSalle(){
    ex.l.forEach((l,m)=>ctl.appendChild(stepper((l.n?l.n+" ":"")+fmtK(v.kg[m])+" kg",
     ()=>{v.kg[m]=Math.max(0,+(v.kg[m]-l.k).toFixed(1));setVal(cur,i,j,v)},
     ()=>{v.kg[m]=+(v.kg[m]+l.k).toFixed(1);setVal(cur,i,j,v)})));
-   if(v.r!=null){const rs=ex.rs||1;ctl.appendChild(stepper(v.r+" "+(ex.u||"reps"),()=>{v.r=Math.max(rs,v.r-rs);setVal(cur,i,j,v)},()=>{v.r=Math.min(ex.u?120:60,v.r+rs);setVal(cur,i,j,v)}))}
+   if(v.r!=null){const rs=ex.rs||1;ctl.appendChild(stepper(v.r+" "+(ex.u||"reps"),()=>{v.r=Math.max(rs,v.r-rs);setVal(cur,i,j,v)},()=>{v.r=Math.min(ex.u==="s"?300:ex.u?120:60,v.r+rs);setVal(cur,i,j,v)}))}
    if(ctl.children.length)blk.appendChild(ctl);
    sec.appendChild(blk)});
   list.appendChild(sec)});
