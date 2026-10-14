@@ -2,6 +2,9 @@
 
 Usage : python3 outils/maj_strava.py --depuis AAAA-MM-JJ page1.json [page2.json …]
 
+Les séances « poids » du mardi et du jeudi entre 9h45 et 11h45 sont la kiné
+(tous les mardis et jeudis à 10h30) : renommées « Kiné », elles ne comptent pas en muscu.
+
 --depuis est la date de début de la requête Strava : une activité de data.json
 datée de ce jour ou après, absente des réponses, a été supprimée sur Strava et
 est retirée. Les noms liés à la santé sont neutralisés (dépôt public).
@@ -26,6 +29,14 @@ def nom(a):
     if t == "Hike":
         return "Randonnée"
     return n[:80] or t
+
+
+def kine_du_matin(x):
+    """Kiné tous les mardis et jeudis à 10h30 (Jules, 14/10) : la montre l'enregistre en « poids »."""
+    if x["t"] not in ("WeightTraining", "Workout") or not x["d"]:
+        return False
+    jour = datetime.date.fromisoformat(x["d"]).weekday()  # 1 = mardi, 3 = jeudi
+    return jour in (1, 3) and "09:45" <= x["h"] <= "11:45"
 
 
 def item(a):
@@ -65,6 +76,9 @@ def main():
             x["n"] = fusion[i]["n"]  # garde le nom déjà nettoyé
         fusion[i] = x
 
+    for x in fusion.values():
+        if kine_du_matin(x):
+            x["n"] = "Kiné"
     items = sorted(fusion.values(), key=lambda x: (x["d"], x["h"]), reverse=True)
     maj = datetime.datetime.now(zoneinfo.ZoneInfo("Europe/Paris")).strftime("%Y-%m-%dT%H:%M")
     data["strava"]["items"] = items
