@@ -1,4 +1,4 @@
-"""Dit ce qui était prévu un jour donné et ce que Strava montre comme fait.
+"""Bilan d'un jour : prévu / fait, charge (effort relatif Strava), retour par séance, conseil du lendemain.
 
 Usage : python3 outils/bilan_jour.py [AAAA-MM-JJ]   (par défaut : aujourd'hui, heure de Paris)
 
@@ -22,16 +22,16 @@ RACINE = pathlib.Path(__file__).resolve().parent.parent
 
 JS = """(date)=>{
  const A=acts();
- const w=WEEKS.find(w=>date>=w.start&&date<=addD(w.start,6));
- if(!w)return {date,hors_programme:true};
- const d=effDays(w).find(x=>x.date===date);
- const st=weekStat(w,A);
- return {date,semaine:"S"+w.s+" · "+w.tag,
-  prevu:d.items.filter(i=>i.k!=="repos").map(i=>({seance:i.t,type:i.k,fixe:!!i.lock,fait:doneOn(date,i.k,A)})),
-  strava:A.filter(a=>a.d===date).map(a=>({nom:a.n,type:a.k,km:a.km,min:a.min})),
-  semaine_course_km:Math.round(st.km*10)/10,semaine_objectif_km:w.km,
-  semaine_runs:st.runs,semaine_box:st.box,semaine_muscu:st.muscu,
+ const out={date,charge:charge(A,date),conseil_jour:conseil(date,A),conseil_demain:conseil(addD(date,1),A),
+  retours:A.filter(a=>a.d===date).map(a=>({nom:a.n,type:a.k,effort:a.re,retour:retourSeance(a,A)})),
   jours_sans:Object.fromEntries(["run","box","muscu"].map(k=>[k,(x=>x?diff(x,date):null)(lastOf(k,A.filter(a=>a.d<=date)))]))};
+ const w=WEEKS.find(w=>date>=w.start&&date<=addD(w.start,6));
+ if(!w)return {...out,hors_programme:true};
+ const d=effDays(w).find(x=>x.date===date),st=weekStat(w,A);
+ return {...out,semaine:"S"+w.s+" · "+w.tag,
+  prevu:d.items.filter(i=>i.k!=="repos").map(i=>({seance:i.t,type:i.k,fixe:!!i.lock,fait:doneOn(date,i.k,A)})),
+  semaine_course_km:Math.round(st.km*10)/10,semaine_objectif_km:w.km,
+  semaine_runs:st.runs,semaine_box:st.box,semaine_muscu:st.muscu};
 }"""
 
 

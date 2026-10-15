@@ -235,6 +235,21 @@ button.set[aria-pressed="true"] .lbl{text-decoration:line-through}
 .optrow .chipbtn[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .ex.skipped{border-left-color:var(--line)}
 .ex.skipped h2{color:var(--muted)}
+/* Charge : effort relatif Strava */
+.niv{display:inline-flex;align-items:center;gap:6px;font:600 13px var(--font-b);padding:3px 10px;border-radius:999px;border:1.5px solid var(--done);color:var(--done);white-space:nowrap}
+.niv::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.niv.orange{border-color:var(--warn);color:var(--warn)}
+.niv.rouge{border-color:var(--miss);color:var(--miss)}
+.adj{border-left:4px solid var(--done);padding:4px 0 4px 12px;display:flex;flex-direction:column;gap:3px}
+.adj.orange{border-left-color:var(--warn)}
+.adj.rouge{border-left-color:var(--miss)}
+.adjl{margin:2px 0 0;padding-left:18px;font-size:15px;display:flex;flex-direction:column;gap:2px}
+.ch-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ch-tiles div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ch-tiles b{font:700 26px/1 var(--font-d);font-variant-numeric:tabular-nums}
+.chart .bar.today{fill:var(--plate)}
+.chart .ref{stroke:var(--muted);stroke-width:1.5;stroke-dasharray:5 4}
+.retour{font-size:14px}
 </style>
 </head>
 <body>
@@ -343,7 +358,7 @@ let LIVE={state:"off",items:[],at:null,code:null};
 function toItem(a){const s=a.summary||{};const st=a.start_local||"";
  return {id:String(a.id),n:a.name||"",t:a.sport_type||"",d:st.slice(0,10),h:st.slice(11,16),km:Math.round((s.distance||0)/10)/100,min:Math.round((s.moving_time||0)/6)/10,re:s.relative_effort??null}}
 function kind(x){const t=x.t,n=x.n||"";
- if(t==="Run"||t==="TrailRun"||t==="VirtualRun")return /hyrox\s*race/i.test(n)?"course":"run";
+ if(t==="Run"||t==="TrailRun"||t==="VirtualRun"){if(/hyrox\s*race/i.test(n))return "course";if(/marche/i.test(n)||(x.min!=null&&x.min<10))return "marche";return "run"}
  if(t==="HighIntensityIntervalTraining"||t==="Crossfit")return "box";
  if(t==="PhysicalTherapy"||/kin[ée]/i.test(n))return "kine";
  if(t==="WeightTraining")return "muscu";
@@ -387,6 +402,67 @@ function bindTips(root){root.querySelectorAll("[data-tip]").forEach(el=>{
  el.addEventListener("pointerleave",()=>tip.hidden=true);el.addEventListener("blur",()=>tip.hidden=true)})}
 addEventListener("scroll",()=>tip.hidden=true,{passive:true});
 
+/* ================= Charge : effort relatif Strava =================
+   Effort relatif = score Strava calculé sur la FC (durée × intensité).
+   Charge 7 j ÷ semaine habituelle (moyenne des 4 dernières), avec un plancher :
+   après une coupure, l'habituel s'effondre et le ratio s'affolerait à chaque séance. */
+const CH_PLANCHER=150; // semaine normale la plus légère d'août-septembre (155–160)
+function dayRE(A,d){return A.filter(a=>a.d===d).reduce((s,a)=>s+(+a.re||0),0)}
+function charge(A,d){let a7=0,a28=0;for(let i=0;i<28;i++){const x=dayRE(A,addD(d,-i));if(i<7)a7+=x;a28+=x}
+ const hab=a28/4,base=Math.max(hab,CH_PLANCHER);
+ return {date:d,jour:dayRE(A,d),veille:dayRE(A,addD(d,-1)),a7,hab:Math.round(hab),base:Math.round(base),ratio:Math.round(a7/base*100)/100}}
+function etatRatio(r){return r>1.5?["rouge","Trop vite"]:r>1.3?["orange","En hausse"]:r<0.8?["vert","Basse"]:["vert","Zone utile"]}
+function conseilSeance(it,niv){const legs=it.salle==="legs";
+ if(niv==="rouge"){if(it.k==="box")return "RPE 6 max, sans chercher le score";if(it.k==="run")return "garde la durée, FC 130–135 seulement";if(legs)return "−20 % sur les charges, aucune série à l'échec";if(it.k==="muscu")return "haut du corps OK, saute la marche inclinée"}
+ if(niv==="orange"){if(it.k==="box")return "RPE 7, pas de max sur les stations";if(it.k==="run")return "telle que prévue, plafond 140 strict";if(legs)return "RPE 7 max, pas d'échec"}
+ return ""}
+function conseil(date,A){A=A||acts();
+ const w=WEEKS.find(w=>date>=w.start&&date<=addD(w.start,6));
+ const items=w?effDays(w).find(x=>x.date===date).items.filter(i=>!i.cancel&&i.k!=="repos"):[];
+ const c=charge(A,addD(date,-1)),veille=c.jour,avant=c.veille; // charge arrêtée à la veille du jour conseillé
+ let niv="vert",titre;
+ if(c.ratio>1.5){niv="rouge";titre=`Alléger : 7 derniers jours à ×${fr(c.ratio,1)} de ton habituel`}
+ else if(veille>=120){niv="orange";titre=`Prudence : grosse journée la veille (effort ${veille})`}
+ else if(veille>=80&&avant>=80){niv="orange";titre="Prudence : deux jours chargés d'affilée"}
+ else if(c.ratio>1.3){niv="orange";titre=`Prudence : charge en hausse (×${fr(c.ratio,1)})`}
+ else if(c.ratio<0.8)titre="Feu vert : charge basse, tu as de la marge";
+ else titre="Feu vert : charge dans ta zone utile";
+ return {date,niv,label:{vert:"Feu vert",orange:"Prudence",rouge:"Alléger"}[niv],titre,charge:c,horsProgramme:!w,
+  seances:items.map(it=>({seance:it.t,type:it.k,conseil:conseilSeance(it,niv)||"telle que prévue"}))}}
+function retourSeance(a,A){if(a.re==null)return "";
+ if(a.k==="run"&&a.min>=15){const lim=Math.round(a.min*0.5);return a.re>lim?`EF trop intense : effort ${a.re} pour ${Math.round(a.min)}' (repère EF : ${lim} max)`:`effort ${a.re}, intensité EF respectée`}
+ if(a.k==="box"){const p=A.filter(x=>x.k==="box"&&x.d<a.d&&x.re!=null).slice(0,8).map(x=>x.re).sort((u,v)=>u-v);
+  if(p.length<3)return `effort ${a.re}`;const med=p[p.length>>1];
+  return a.re>med*1.25?`box plus dure que d'habitude : effort ${a.re} (habituel ~${med})`:a.re<med*0.7?`box plus légère que d'habitude : effort ${a.re} (habituel ~${med})`:`effort ${a.re}, dans ton habituel (~${med})`}
+ return `effort ${a.re}`}
+function adjHTML(cs,quand){if(cs.horsProgramme)return "";
+ const lst=cs.seances.length?`<ul class="adjl">${cs.seances.map(x=>`<li><strong>${esc(x.seance)}</strong> : ${esc(x.conseil)}</li>`).join("")}</ul>`:`<span class="small">Repos prévu${cs.niv==="rouge"?" : repos complet, marche tranquille seulement":""}.</span>`;
+ return `<div class="adj ${cs.niv}"><span class="eyebrow">${quand}</span><strong>${esc(cs.titre)}</strong>${lst}</div>`}
+function chargeChart(A,c){
+ const days=[];for(let i=13;i>=0;i--){const d=addD(TODAY,-i);days.push({d,re:dayRE(A,d),list:A.filter(a=>a.d===d&&a.re)})}
+ const W=360,H=140,m={l:28,r:8,t:16,b:22},iw=W-m.l-m.r,ih=H-m.t-m.b,ref=c.base/7;
+ const top=Math.max(60,ref,...days.map(x=>x.re)),step=top<=90?30:top<=180?60:100,ymax=Math.ceil(top/step)*step;
+ const y=v=>m.t+ih-v/ymax*ih,bw=iw/14;
+ let g="";
+ for(let v=0;v<=ymax;v+=step)g+=`<line class="grid" x1="${m.l}" x2="${W-m.r}" y1="${y(v)}" y2="${y(v)}"/><text x="${m.l-5}" y="${y(v)+4}" text-anchor="end">${v}</text>`;
+ g+=`<line class="ref" x1="${m.l}" x2="${W-m.r}" y1="${y(ref)}" y2="${y(ref)}"/>`;
+ days.forEach((x,i)=>{const cx=m.l+i*bw+bw/2,bwid=Math.max(6,bw*.62),bx=cx-bwid/2,isT=x.d===TODAY,j=(parse(x.d).getDay()+6)%7;
+  if(x.re>0){const t=y(x.re),r=Math.min(3,y(0)-t);
+   g+=`<path class="bar ${isT?"today":""}" d="M${bx},${y(0)}V${t+r}Q${bx},${t} ${bx+r},${t}H${bx+bwid-r}Q${bx+bwid},${t} ${bx+bwid},${t+r}V${y(0)}Z"/>`;
+   if(x.re>=60||isT)g+=`<text class="lbl" x="${cx}" y="${t-4}" text-anchor="middle">${x.re}</text>`}
+  g+=`<text x="${cx}" y="${H-6}" text-anchor="middle" ${isT?'class="lbl"':""}>${["L","Ma","Me","J","V","S","D"][j]}</text>`;
+  const tip=`${JOURSL[j]} ${dm(x.d)} · effort ${x.re}`+(x.list.length?"\n"+x.list.map(a=>`${a.n} : ${a.re}`).join("\n"):"\nrepos");
+  g+=`<rect class="hit" x="${m.l+i*bw}" y="${m.t}" width="${bw}" height="${ih}" tabindex="0" data-tip="${esc(tip)}"><title>${esc(tip)}</title></rect>`});
+ return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Effort relatif Strava par jour sur 14 jours">${g}</svg>
+  <div class="legend"><span><i style="background:var(--run)"></i>effort relatif du jour</span><span><i style="background:var(--plate)"></i>aujourd'hui</span><span><i style="height:0;border-top:2px dashed var(--muted);border-radius:0"></i>ta moyenne par jour (${Math.round(ref)})</span></div>`}
+function chargeBlock(A){
+ const c=charge(A,TODAY),et=etatRatio(c.ratio),dem=conseil(addD(TODAY,1),A);
+ return `<div class="block"><div class="row between"><h3>Charge · effort relatif</h3><span class="niv ${et[0]}">${et[1]}</span></div>
+  <div class="ch-tiles"><div><span class="eyebrow">Aujourd'hui</span><b>${c.jour}</b></div><div><span class="eyebrow">7 jours</span><b>${c.a7}</b></div><div><span class="eyebrow">Ratio</span><b>×${fr(c.ratio,2)}</b><span class="muted small">habituel ${c.hab}/sem.</span></div></div>
+  ${chargeChart(A,c)}
+  ${adjHTML(dem,"Demain · "+longDate(addD(TODAY,1)))}
+  <p class="muted small">Effort relatif : score Strava calculé sur ta FC (durée × intensité). Ratio : 7 derniers jours ÷ ta semaine habituelle (moyenne des 4 dernières, ${CH_PLANCHER} minimum après une coupure). Zone utile 0,8–1,3 ; au-dessus de 1,5, on allège. Mis à jour à chaque contrôle Strava, vers 22h.</p></div>`}
+
 /* ================= Vue Semaine ================= */
 let WI=(()=>{const i=WEEKS.findIndex(w=>TODAY>=w.start&&TODAY<=addD(w.start,6));return i>=0?i:(TODAY<WEEKS[0].start?0:WEEKS.length-1)})();
 let FORME=null,SYMPT=false,NOTE_DRAFT="",RESS_MSG="";
@@ -408,7 +484,7 @@ function statusOf(date,it,A){
 function itemRow(d,it,isT,s,w){
  const chips=(it.moved?`<span class="chip moved">Reporté du ${dm(it.moved)}</span>`:"")+(it.lock?`<span class="chip lock">Fixe</span>`:it.cut?`<span class="chip">Coupe ${it.cut}</span>`:"");
  let h=`<div class="it ${it.cancel?"cancel":""}"><div class="txt"><strong>${chips}${esc(it.t)}</strong>
-  ${it.note&&!it.cancel?`<span class="small">${esc(it.note)}</span>`:""}${it.k==="run"&&!it.cancel?`<span class="muted small">${it.ld?"6 lignes droites · ":""}${it.ref?"Protocole de référence · ":""}FC 130–140</span>`:""}
+  ${it.note&&!it.cancel?`<span class="small">${esc(it.note)}</span>`:""}${it.k==="run"&&!it.cancel?`<span class="muted small">${it.ld?"6 lignes droites · ":""}${it.ref?"Protocole de référence · ":""}FC 130–140</span>`:""}${s&&s[0]==="fait"?(re=>re?`<span class="muted small">Effort relatif ${re}</span>`:"")(acts().filter(a=>a.d===d.date&&a.k===it.k).reduce((n,a)=>n+(+a.re||0),0)):""}
   <span class="row" style="gap:14px">${it.salle&&!isT&&!it.cancel?`<button class="link" data-salle="${it.salle}">Checklist</button>`:""}${it.k!=="repos"&&!(s&&s[0]==="fait")?`<button class="link small-link" data-edit="${it.key}">${EDIT===it.key?"Fermer":"Reporter / annuler"}</button>`:""}</span></div>${s?`<span class="st ${s[0]}">${s[1]}</span>`:""}</div>`;
  if(EDIT===it.key){
   const from=TODAY>w.start?TODAY:w.start,end=addD(w.start,6),opts=[];
@@ -432,11 +508,14 @@ function renderSemaine(){
  if(COACH&&COACH.texte){h+=`<div class="block coach"><div class="row between"><h3>${esc(COACH.titre||"Point coach")}</h3><span class="muted small">${COACH.date?dm(COACH.date):""}</span></div><p>${esc(COACH.texte)}</p>${Array.isArray(COACH.points)&&COACH.points.length?`<ul>${COACH.points.map(p=>`<li>${esc(p)}</li>`).join("")}</ul>`:""}</div>`}
  // Aujourd'hui
  const td=D.find(d=>d.date===TODAY);
- if(td){h+=`<div class="block"><span class="eyebrow">Aujourd'hui</span><div class="todo">${td.items.map(it=>{const s=statusOf(TODAY,it,A);
+ if(td){h+=`<div class="block"><span class="eyebrow">Aujourd'hui</span>${adjHTML(conseil(TODAY,A),"Ajustement du jour")}<div class="todo">${td.items.map(it=>{const s=statusOf(TODAY,it,A);
+   const ret=A.filter(a=>a.d===TODAY&&a.k===it.k).map(a=>retourSeance(a,A)).filter(Boolean).join(" · ");
    return `<div class="card k-${it.k}"><div class="row between"><h3>${it.moved?`<span class="chip moved">Reporté du ${dm(it.moved)}</span>`:""}${esc(it.t)}</h3>${s?`<span class="st ${s[0]}">${s[1]}</span>`:""}</div>
    ${it.note?`<p><strong>${esc(it.note)}</strong></p>`:""}${itemDetail(it)?`<p class="muted small">${esc(itemDetail(it))}</p>`:""}
    ${it.ref?`<ol class="proto">${REF_PROTO.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`:""}
-   ${it.salle?`<div><button class="btn" data-salle="${it.salle}">Ouvrir la checklist</button></div>`:""}</div>`}).join("")}</div></div>`}
+   ${ret?`<p class="retour"><strong>Retour :</strong> ${esc(ret)}</p>`:""}
+   ${it.salle?`<div><button class="btn" data-salle="${it.salle}">Ouvrir la checklist</button></div>`:""}</div>`}).join("")}</div></div>`;
+  h+=chargeBlock(A)}
  // Tuiles
  h+=`<div class="tiles">
   <div class="tile"><span class="eyebrow">Course</span><b>${fr(st.km)}<small> / ${fr(w.km)} km</small></b><div class="meter"><span style="width:${pct}%"></span></div></div>
@@ -463,7 +542,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis et séances reportées ou annulées des 7 derniers jours, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 6 · 14/10</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 7 · 15/10</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -472,6 +551,7 @@ function renderSemaine(){
  $("#rnote").oninput=e=>{NOTE_DRAFT=e.target.value};
  $("#rsave").onclick=saveRessenti;
  $("#sendc").onclick=shareCoach;
+ bindTips(el);
  el.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>{EDIT=EDIT===b.dataset.edit?null:b.dataset.edit;CONFIRM=null;renderSemaine()});
  el.querySelectorAll("[data-move]").forEach(b=>b.onclick=()=>{MODS[b.dataset.move]={s:"reporte",to:b.dataset.to,le:TODAY};EDIT=null;CONFIRM=null;saveMods();renderSemaine()});
  el.querySelectorAll("[data-cancel]").forEach(b=>b.onclick=()=>{const k=b.dataset.cancel;const it=effDays(w).flatMap(x=>x.items).find(x=>x.key===k);
