@@ -542,7 +542,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis et séances reportées ou annulées des 7 derniers jours, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 8 · 17/10</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 9 · 17/10</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -707,7 +707,7 @@ const S={
  push:{name:"Push",title:"Push — pecs / triceps",ex:[
   {t:"Développé incliné haltères",rest:"2'30",h:"Charge par haltère.",l:[L("",2)],s:[[[26],10],[[28],8],[[30],8],[[32],8]]},
   {t:"Développé couché haltères",rest:"2'",h:"Charge par haltère.",l:[L("",2)],s:[[[26],10],[[28],10],[[30],10]]},
-  {t:"Superset écartés + push press",rest:"1'30 entre les tours",h:"Charge par haltère ; la même paire pour les deux, c'est plus simple. Sans repos entre les deux. 1) Écartés sur banc plat : coudes légèrement fléchis, descente contrôlée, les coudes ne passent pas sous le niveau du banc. 2) Push press debout : petite flexion des genoux, poussée des jambes, gainé, côtes basses, pas de cambrure en haut. Reps = pour chacun des deux.",l:[L("Écartés",2),L("Push press",2)],s:[[[10,10],10],[[12,12],10],[[12,12],10]]},
+  {t:"Superset écartés + presse serrée",rest:"1'30 entre les tours",h:"Sans repos entre les deux. 1) Écartés haltères sur banc plat (charge par haltère) : coudes légèrement fléchis, descente contrôlée, les coudes ne passent pas sous le niveau du banc. 2) Presse serrée debout (Svend press) : haltère ou disque serré entre les paumes à hauteur de poitrine, tends les bras devant toi en serrant fort, 1 s bras tendus, reviens lentement, épaules basses. Le serrage compte plus que le poids. Reps = pour chacun des deux.",l:[L("Écartés",2),L("Presse",2)],s:[[[10,10],10],[[12,12],10],[[12,12],10]]},
   {t:"Dips",rest:"1'30",h:"Buste penché en avant. Poids du corps : règle tes reps.",l:[],s:rep([],6,3)},
   {t:"Écartés poulie",rest:"1'",h:"Chiffre affiché sur la colonne. Poulie à hauteur de poitrine, 1 s de contraction.",l:[L("",2.5)],s:[[[7.5],12],[[10],12],[[10],11]]},
   {t:"Tri-set triceps",rest:"1'30 entre les tours",h:"Poulies : chiffre affiché. Barre au front : poids total, barre EZ comprise. Sans repos entre les 3 : corde 10–12, extension unilatérale 10/bras, barre au front 12–15.",l:[L("Corde",2.5),L("Unilat.",2.5),L("Barre",5)],s:rep([20,7.5,15],null,3)},
