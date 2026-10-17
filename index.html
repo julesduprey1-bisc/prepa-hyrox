@@ -34,10 +34,13 @@
   --done:#4FB47F;--miss:#E37466;--warn:#E0A040;--run:#7FB0E0;--band:rgba(127,176,224,.14);--soft:#232C35;color-scheme:dark}
 *,*::before,*::after{box-sizing:border-box}
 [hidden]{display:none!important}
-html{background:var(--bg);padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+/* Coque d'app : html et body ne défilent jamais (sur iPhone, un bandeau « fixed » se décale quand la page défile
+   et se redessine). Seul #scroller défile ; le bandeau est le dernier élément de la colonne, donc toujours en bas. */
+html{height:100%;overflow:hidden;overscroll-behavior:none;background:var(--bg);-webkit-text-size-adjust:100%}
 img{max-width:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--font-b);padding-inline:16px}
-main{max-width:600px;margin:0 auto;padding-block:16px calc(var(--navh) + 32px + env(safe-area-inset-bottom,0px))}
+body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--font-b)}
+#scroller{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-inline:16px}
+.wrap{max-width:600px;margin:0 auto;padding-block:16px 32px}
 h1,h2,h3{font-family:var(--font-d);text-wrap:balance;margin:0}
 h1{font-weight:800;font-size:34px;line-height:1}
 h2{font-weight:700;font-size:24px;line-height:1.1}
@@ -60,7 +63,7 @@ button:focus-visible,a:focus-visible,textarea:focus-visible{outline:3px solid va
 .iconbtn[disabled]{opacity:.35;cursor:default}
 
 /* Barre d'onglets */
-nav.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--panel);border-top:1px solid var(--line);padding:6px 16px calc(6px + env(safe-area-inset-bottom,0px))}
+nav.tabbar{flex:none;position:relative;z-index:10;background:var(--panel);border-top:1px solid var(--line);padding:6px 16px calc(6px + env(safe-area-inset-bottom,0px))}
 nav.tabbar .in{max-width:600px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 nav.tabbar button{min-height:50px;border:none;border-radius:10px;background:transparent;cursor:pointer;font:600 16px var(--font-d);letter-spacing:.03em;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 nav.tabbar button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2}
@@ -191,7 +194,7 @@ details summary{cursor:pointer;color:var(--muted);font-size:14px;min-height:32px
 .hbar.lim .track span{background:var(--miss)}
 
 /* ===== Salle (checklists) ===== */
-#v-salle .shead{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);margin-inline:-16px;padding:8px 16px 10px;border-bottom:1px solid var(--line)}
+#v-salle .shead{position:sticky;top:0;z-index:5;background:var(--bg);margin-inline:-16px;padding:8px 16px 10px;border-bottom:1px solid var(--line)}
 .stabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 .stabs button{flex:1;min-width:22%;min-height:44px;border:2px solid var(--line);border-radius:10px;background:transparent;color:var(--ink);font:600 16px var(--font-d);cursor:pointer}
 .stabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
@@ -253,7 +256,7 @@ button.set[aria-pressed="true"] .lbl{text-decoration:line-through}
 </style>
 </head>
 <body>
-<main>
+<main id="scroller"><div class="wrap">
   <section id="v-semaine" class="stack" aria-label="Semaine"></section>
   <section id="v-course" class="stack" aria-label="Course" hidden></section>
   <section id="v-salle" aria-label="Salle" hidden>
@@ -267,7 +270,7 @@ button.set[aria-pressed="true"] .lbl{text-decoration:line-through}
     <div class="block" id="ssaved" style="margin-top:14px"></div>
   </section>
   <section id="v-objectif" class="stack" aria-label="Objectif" hidden></section>
-</main>
+</div></main>
 
 <nav class="tabbar" aria-label="Sections">
   <div class="in" role="tablist">
@@ -295,6 +298,7 @@ const JOURSL=["lundi","mardi","mercredi","jeudi","vendredi","samedi","dimanche"]
 const MOIS=["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
 function longDate(s){const d=parse(s);return JOURSL[(d.getDay()+6)%7]+" "+d.getDate()+" "+MOIS[d.getMonth()]}
 const TODAY=ymd(new Date());
+const SCR=document.getElementById("scroller");
 function ld(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
 function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 
@@ -388,7 +392,7 @@ if(!VIEWS.includes(VIEW))VIEW=ld("app-view",null)||"semaine";
 if(!VIEWS.includes(VIEW))VIEW="semaine";
 function show(v){VIEW=v;sv("app-view",v);
  VIEWS.forEach(x=>{$("#v-"+x).hidden=x!==v;$("#t-"+x).setAttribute("aria-selected",x===v)});
- window.scrollTo(0,0)}
+ SCR.scrollTo(0,0)}
 document.querySelectorAll("nav.tabbar button").forEach(b=>b.onclick=()=>show(b.dataset.v));
 
 /* ================= Infobulle ================= */
@@ -400,7 +404,7 @@ function bindTips(root){root.querySelectorAll("[data-tip]").forEach(el=>{
  el.addEventListener("pointerenter",on);el.addEventListener("focus",on);
  el.addEventListener("pointerdown",on);
  el.addEventListener("pointerleave",()=>tip.hidden=true);el.addEventListener("blur",()=>tip.hidden=true)})}
-addEventListener("scroll",()=>tip.hidden=true,{passive:true});
+document.addEventListener("scroll",()=>tip.hidden=true,{passive:true,capture:true});
 
 /* ================= Charge : effort relatif Strava =================
    Effort relatif = score Strava calculé sur la FC (durée × intensité).
@@ -542,7 +546,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis et séances reportées ou annulées des 7 derniers jours, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 9 · 17/10</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 10 · 17/10</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -793,7 +797,7 @@ function saveSeance(){const sess=S[cur];const rec={date:TODAY,seance:cur,titre:s
 function renderSalle(){
  const tabs=$("#stabs"),list=$("#slist");tabs.innerHTML="";
  for(const id in S){const b=document.createElement("button");b.setAttribute("role","tab");b.setAttribute("aria-selected",id===cur);b.textContent=S[id].name;
-  b.onclick=()=>{cur=id;SAVE_MSG="";sv("salle-tab",id);sv("salle-tab-day",now.toDateString());renderSalle();window.scrollTo(0,0)};tabs.appendChild(b)}
+  b.onclick=()=>{cur=id;SAVE_MSG="";sv("salle-tab",id);sv("salle-tab-day",now.toDateString());renderSalle();SCR.scrollTo(0,0)};tabs.appendChild(b)}
  const sess=S[cur],s=st[cur],done=new Set(s.done);
  $("#stitle").textContent=sess.title;list.innerHTML="";
  const live=sess.ex.map((_,i)=>!isSkipped(cur,i));
