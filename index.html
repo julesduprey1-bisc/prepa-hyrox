@@ -542,7 +542,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis et séances reportées ou annulées des 7 derniers jours, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 7 · 15/10</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 8 · 17/10</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -707,6 +707,7 @@ const S={
  push:{name:"Push",title:"Push — pecs / triceps",ex:[
   {t:"Développé incliné haltères",rest:"2'30",h:"Charge par haltère.",l:[L("",2)],s:[[[26],10],[[28],8],[[30],8],[[32],8]]},
   {t:"Développé couché haltères",rest:"2'",h:"Charge par haltère.",l:[L("",2)],s:[[[26],10],[[28],10],[[30],10]]},
+  {t:"Superset écartés + push press",rest:"1'30 entre les tours",h:"Charge par haltère ; la même paire pour les deux, c'est plus simple. Sans repos entre les deux. 1) Écartés sur banc plat : coudes légèrement fléchis, descente contrôlée, les coudes ne passent pas sous le niveau du banc. 2) Push press debout : petite flexion des genoux, poussée des jambes, gainé, côtes basses, pas de cambrure en haut. Reps = pour chacun des deux.",l:[L("Écartés",2),L("Push press",2)],s:[[[10,10],10],[[12,12],10],[[12,12],10]]},
   {t:"Dips",rest:"1'30",h:"Buste penché en avant. Poids du corps : règle tes reps.",l:[],s:rep([],6,3)},
   {t:"Écartés poulie",rest:"1'",h:"Chiffre affiché sur la colonne. Poulie à hauteur de poitrine, 1 s de contraction.",l:[L("",2.5)],s:[[[7.5],12],[[10],12],[[10],11]]},
   {t:"Tri-set triceps",rest:"1'30 entre les tours",h:"Poulies : chiffre affiché. Barre au front : poids total, barre EZ comprise. Sans repos entre les 3 : corde 10–12, extension unilatérale 10/bras, barre au front 12–15.",l:[L("Corde",2.5),L("Unilat.",2.5),L("Barre",5)],s:rep([20,7.5,15],null,3)},
@@ -755,6 +756,12 @@ if(!st.migrated){
  if(oldReps){st.push.val[2]=st.push.val[2]||{};oldReps.forEach((r,j)=>{st.push.val[2][j]={kg:[],r}})}
  st.migrated=true;sv("salle-v4",st)}
 if(!st.pullV5){st.pull={done:[],val:{}};st.pullV5=true;sv("salle-v4",st)}
+/* 17/10 : superset écartés + push press inséré en 3e position du Push → on décale les saisies déjà gardées */
+if(!st.pushV8){const P=st.push,sh=k=>{const i=+k;return i>=2?i+1:i};
+ const nv={};for(const k in (P.val||{}))nv[sh(k)]=P.val[k];P.val=nv;
+ P.done=(P.done||[]).map(x=>{const [i,j]=String(x).split("-");return sh(i)+"-"+j});
+ if(P.skip&&P.skip.m){const m={};for(const k in P.skip.m)m[sh(k)]=P.skip.m[k];P.skip.m=m}
+ st.pushV8=true;sv("salle-v4",st)}
 function saveSt(){sv("salle-v4",st)}
 function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const n=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-n);const y=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y)/864e5+1)/7)}
 const now=new Date(),day=now.getDay(),legsToday=isoWeek(now)%2===0?"legsA":"legsB";
@@ -764,7 +771,7 @@ if(!S[cur])cur=def;
 let SAVE_MSG="";
 function openSalle(id){cur=id==="legs"?legsToday:id;sv("salle-tab",cur);sv("salle-tab-day",now.toDateString());renderSalle();show("salle")}
 function val(id,i,j){const d=S[id].ex[i].s[j],v=(st[id].val[i]||{})[j];
- return {kg:(v&&v.kg)?v.kg.slice():d[0].slice(),r:(v&&v.r!=null)?v.r:d[1]}}
+ return {kg:(v&&v.kg&&v.kg.length===d[0].length)?v.kg.slice():d[0].slice(),r:(v&&v.r!=null)?v.r:d[1]}}
 function setVal(id,i,j,v){st[id].val[i]=st[id].val[i]||{};st[id].val[i][j]=v;saveSt();renderSalle()}
 function fmtK(n){return String(n).replace(".",",")}
 function stepper(text,dec,inc){const w=document.createElement("div");w.className="step";
