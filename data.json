@@ -1,9 +1,19 @@
 {
- "maj": "2026-10-17T21:55",
+ "maj": "2026-10-18T21:55",
  "strava": {
-  "maj": "2026-10-17T21:55",
+  "maj": "2026-10-18T21:55",
   "source": "Strava list_activities, du 01/07 au 12/10/2026",
   "items": [
+   {
+    "id": "20637387989",
+    "n": "Marche dans l'après-midi",
+    "t": "Walk",
+    "d": "2026-10-18",
+    "h": "16:04",
+    "km": 4.31,
+    "min": 64.1,
+    "re": 8
+   },
    {
     "id": "20622352837",
     "n": "Marche dans l'après-midi",
