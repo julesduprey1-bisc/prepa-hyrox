@@ -1,9 +1,19 @@
 {
- "maj": "2026-10-20T21:55",
+ "maj": "2026-10-21T21:55",
  "strava": {
-  "maj": "2026-10-20T21:55",
+  "maj": "2026-10-21T21:55",
   "source": "Strava list_activities, du 01/07 au 12/10/2026",
   "items": [
+   {
+    "id": "20678030768",
+    "n": "Entraînement aux poids dans l'après-midi",
+    "t": "WeightTraining",
+    "d": "2026-10-21",
+    "h": "17:39",
+    "km": 0.0,
+    "min": 86.5,
+    "re": 29
+   },
    {
     "id": "20658167515",
     "n": "Kiné",
