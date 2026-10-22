@@ -31,7 +31,7 @@ JS = """(date)=>{
  return {...out,semaine:"S"+w.s+" · "+w.tag,
   prevu:d.items.filter(i=>i.k!=="repos").map(i=>({seance:i.t,type:i.k,fixe:!!i.lock,fait:doneOn(date,i.k,A)})),
   semaine_course_km:Math.round(st.km*10)/10,semaine_objectif_km:w.km,
-  semaine_runs:st.runs,semaine_box:st.box,semaine_muscu:st.muscu};
+  semaine_runs:st.runs,semaine_box:st.box,semaine_kine:st.kine,semaine_muscu:st.muscu};
 }"""
 
 
