@@ -233,6 +233,8 @@ button.set[aria-pressed="true"] .lbl{text-decoration:line-through}
 .chipbtn{min-height:40px;padding:0 12px;border-radius:999px;border:2px solid var(--line);background:var(--panel);cursor:pointer;font:600 15px var(--font-b)}
 .chipbtn.danger{border-color:var(--miss);color:var(--miss)}
 .small-link{font-size:14px;color:var(--muted)}
+#crash{flex:none;background:var(--panel);border-left:6px solid var(--miss);padding:12px 16px;display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+#crash p{margin:0;font-size:14px;color:var(--muted);word-break:break-word}
 /* Blocs facultatifs : oui / non */
 .optrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 10px}
 .optrow .chipbtn[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
@@ -282,6 +284,18 @@ button.set[aria-pressed="true"] .lbl{text-decoration:line-through}
 </nav>
 <div id="tip" hidden></div>
 
+<script>
+/* Si l'app casse au chargement, on affiche l'erreur et un bouton Recharger au lieu d'un écran vide. */
+(function(){
+ function montre(msg){try{var el=document.getElementById("crash");
+  if(!el){el=document.createElement("div");el.id="crash";el.setAttribute("role","alert");document.body.insertBefore(el,document.body.firstChild)}
+  el.innerHTML='<strong>L\u2019app a rencontré une erreur</strong><p></p><button type="button" class="btn" id="crashreload">Recharger</button>';
+  el.querySelector("p").textContent=String(msg).slice(0,300)+" · "+navigator.userAgent.replace(/^Mozilla\/5\.0 /,"").slice(0,80);
+  el.querySelector("#crashreload").onclick=function(){location.reload()}}catch(e){}}
+ window.addEventListener("error",function(e){montre((e.message||"Erreur inconnue")+(e.lineno?" (ligne "+e.lineno+")":""))});
+ window.addEventListener("unhandledrejection",function(e){var r=e.reason;montre((r&&r.message)||r||"Erreur inconnue")});
+})();
+</script>
 <script>
 /* ================= Outils ================= */
 const $=s=>document.querySelector(s);
@@ -550,7 +564,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis et séances reportées ou annulées des 7 derniers jours, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 11 · 22/10</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 12 · 24/10</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
