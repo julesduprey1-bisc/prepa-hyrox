@@ -566,7 +566,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis et séances reportées ou annulées des 7 derniers jours, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 16 · 24/10</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 17 · 24/10</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -728,6 +728,13 @@ const L=(n,k)=>({n,k});
    Présélection : l'exercice le plus souvent fait sur ce créneau (historique du téléphone), l'habituel à égalité. */
 const X=(k,t,h,l,d,r,o)=>Object.assign({k,t,h,l,d,r},o||{});
 const MIN={u:"min",rs:5},SEC={u:"s",rs:5};
+const MACHINES=new Set(["ecartes-poulie","poulie-basse","poulie-haute","triset","marche","ss-tirages","curl-poulie-unilat","leg-curl","adducteurs-machine","presse","leg-extension",
+ "inc-smith","inc-machine","chest-press","ss-pecdeck-presse","dips-assistes","pec-deck","pec-deck-bas","decline-machine","corde","kickback","ss-corde-front",
+ "escalier","velo","elliptique","rameur","skierg","pallof","rowing-machine","tirage-horizontal","tirage-vertical","tirage-serre","pullover","rowing-poulie-unilat",
+ "curl-machine","curl-poulie-basse","curl-pupitre","curl-poulie-barre","marteau-corde","lombaires-machine","hack","fentes-smith","leg-curl-unilat",
+ "adducteurs-poulie","abducteurs","dev-machine","laterales-poulie","oiseau-machine","mollets-machine","mollets-assis","mollets-presse","hip-thrust-machine",
+ "kickback-fessier","leg-ext-unilat"]);
+const CATEG=o=>MACHINES.has(o.k)?"machine":"libre";
 const CAT={
  "pecs-haut":[
   X("inc-barre","Développé incliné barre","Poids total, barre comprise. Banc à 30°, barre vers le haut des pecs.",[L("",5)],[50],8),
@@ -758,7 +765,8 @@ const CAT={
   X("landmine","Développé landmine","Barre calée dans un coin, poussée à une main en diagonale : haut des pecs, épaule protégée. Charge des disques, reps par bras.",[L("",2.5)],[10],10)],
  "pecs-bas-iso":[
   X("ecartes-decline","Écartés décliné haltères","Banc décliné, charge par haltère.",[L("",2)],[10],12),
-  X("dips-penche","Dips buste penché","Poids du corps, buste très penché : bas des pecs.",[],[],10)],
+  X("dips-penche","Dips buste penché","Poids du corps, buste très penché : bas des pecs.",[],[],10),
+  X("decline-machine","Chest press déclinée machine","Chiffre de la machine : bas des pecs.",[L("",5)],[40],10)],
  "triceps":[
   X("corde","Extension corde poulie haute","Chiffre de la colonne. Coudes fixes, écarte la corde en bas.",[L("",2.5)],[20],12),
   X("barre-front","Barre au front","Poids total, barre EZ comprise. Coudes fixes.",[L("",2.5)],[20],10),
@@ -797,7 +805,9 @@ const CAT={
   X("curl-ez","Curl barre EZ","Poids total, barre comprise. Coudes fixes.",[L("",2.5)],[25],10),
   X("curl-alterne","Curl haltères alterné","Charge par haltère, reps par bras, zéro élan.",[L("",2)],[14],10),
   X("curl-marteau","Curl marteau","Prise neutre, charge par haltère : biceps et avant-bras.",[L("",2)],[14],10),
-  X("curl-incline","Curl incliné haltères","Banc à 45°, bras derrière le buste : étirement du biceps.",[L("",2)],[10],10)],
+  X("curl-incline","Curl incliné haltères","Banc à 45°, bras derrière le buste : étirement du biceps.",[L("",2)],[10],10),
+  X("curl-machine","Curl biceps machine","Chiffre de la machine, coudes calés, descente lente.",[L("",2.5)],[25],10),
+  X("curl-poulie-basse","Curl poulie basse barre","Chiffre de la colonne, coudes fixes.",[L("",2.5)],[20],10)],
  "biceps-iso":[
   X("curl-concentre","Curl concentré","Assis, coude contre la cuisse, reps par bras.",[L("",2)],[10],12),
   X("curl-pupitre","Curl pupitre machine","Chiffre de la machine, descente lente.",[L("",2.5)],[20],12),
@@ -807,7 +817,8 @@ const CAT={
   X("extension-45","Extension lombaire banc 45°","Pas d'hyperextension en haut, 1 s en haut.",[],[],12),
   X("good-morning","Good morning barre à vide","Dos neutre, charnière à la hanche.",[L("",2.5)],[20],12),
   X("bird-dog","Bird dog","Reps par côté, 3 s de maintien, bassin immobile.",[],[],8),
-  X("pont-fessier","Pont fessier","Pause 2 s en haut.",[],[],12)],
+  X("pont-fessier","Pont fessier","Pause 2 s en haut.",[],[],12),
+  X("lombaires-machine","Extension lombaire machine","Chiffre de la machine, amplitude contrôlée, aucune douleur.",[L("",5)],[30],12)],
  "quadris":[
   X("squat","Squat","Poids total, barre comprise. Commence léger, stop si le bas du dos tire.",[L("",5)],[60],8),
   X("presse","Presse à cuisses","Disques chargés uniquement, sans le chariot. Genoux dans l'axe.",[L("",10)],[120],12),
@@ -819,6 +830,7 @@ const CAT={
   X("fentes-arriere","Fentes arrière","Charge par haltère, reps par jambe : moins de contrainte sur le genou.",[L("",2)],[14],10),
   X("fentes-sandbag","Fentes sandbag","Sac sur les épaules, comme en HYROX. Reps = nombre de pas.",[L("",5)],[20],20),
   X("step-up","Step-up","Banc à hauteur de genou, charge par haltère, reps par jambe.",[L("",2)],[12],10),
+  X("fentes-smith","Fentes à la Smith","Barre guidée sur les épaules, charge ajoutée, reps par jambe.",[L("",5)],[20],10),
   X("bulgare","Squat bulgare","Pied arrière sur un banc, charge par haltère, reps par jambe.",[L("",2)],[12],10)],
  "ischios":[
   X("rdl","Soulevé de terre roumain","Poids total (barre ou haltères). Dos neutre, descends jusqu'aux genoux, poussée de hanches.",[L("",5)],[50],10),
@@ -834,7 +846,9 @@ const CAT={
   X("dev-machine","Développé épaules machine","Chiffre de la machine.",[L("",5)],[30],10),
   X("laterales","Élévations latérales","Charge par haltère, coudes légèrement fléchis, jusqu'à hauteur d'épaules.",[L("",1)],[8],15),
   X("oiseau","Oiseau (arrière d'épaule)","Buste penché, charge par haltère.",[L("",1)],[6],15),
-  X("landmine-epaule","Landmine press","Barre calée dans un coin, une main, reps par bras.",[L("",2.5)],[10],10)],
+  X("landmine-epaule","Landmine press","Barre calée dans un coin, une main, reps par bras.",[L("",2.5)],[10],10),
+  X("laterales-poulie","Élévations latérales poulie","Poulie basse du côté opposé, reps par bras.",[L("",2.5)],[5],15),
+  X("oiseau-machine","Oiseau machine (pec deck inversé)","Chiffre de la machine : arrière d'épaule.",[L("",5)],[30],15)],
  "mollets":[
   X("mollets-machine","Mollets debout machine","Chiffre de la machine, 1 s en haut, descente complète.",[L("",5)],[60],12),
   X("mollets-assis","Mollets assis","Chiffre de la machine.",[L("",5)],[30],15),
@@ -999,8 +1013,11 @@ function renderSalle(){
   if(live[i]&&opts.length>1){const pr=document.createElement("label");pr.className="pickrow";
    const lb=document.createElement("span");lb.className="small muted";lb.textContent="Exercice";
    const sel=document.createElement("select");sel.id="pick-"+cur+"-"+i;const c=histCount(cur,i),k=pickKey(cur,i);
-   opts.map((o,n)=>({o,n,sc:(c[o.k]||0)+(n===0?0.5:0)})).sort((a,b)=>b.sc-a.sc||a.n-b.n).forEach(({o})=>{
-    const op=document.createElement("option");op.value=o.k;op.textContent=o.t+(c[o.k]?` · ${c[o.k]}×`:"")+(o===ex0?" · habituel":"");op.selected=o.k===k;sel.appendChild(op)});
+   const tri=opts.map((o,n)=>({o,n,sc:(c[o.k]||0)+(n===0?0.5:0)})).sort((a,b)=>b.sc-a.sc||a.n-b.n);
+   [["libre","Poids libres"],["machine","Machines guidées"]].forEach(([cg,lab])=>{const part=tri.filter(x=>CATEG(x.o)===cg);if(!part.length)return;
+    const og=document.createElement("optgroup");og.label=lab;
+    part.forEach(({o})=>{const op=document.createElement("option");op.value=o.k;op.textContent=o.t+(c[o.k]?` · ${c[o.k]}×`:"")+(o===ex0?" · habituel":"");op.selected=o.k===k;og.appendChild(op)});
+    sel.appendChild(og)});
    sel.onchange=()=>setPick(cur,i,sel.value);pr.append(lb,sel);sec.querySelector("h2").after(pr)}
   {const row=document.createElement("div");row.className="optrow";
    const q=document.createElement("span");q.className="small";q.textContent="Au programme aujourd'hui ?";row.appendChild(q);
