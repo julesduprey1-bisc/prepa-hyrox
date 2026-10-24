@@ -564,7 +564,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis et séances reportées ou annulées des 7 derniers jours, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 12 · 24/10</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 13 · 24/10</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -732,6 +732,7 @@ const S={
   {t:"Superset écartés + presse serrée",rest:"1'30 entre les tours",h:"Sans repos entre les deux. 1) Écartés haltères sur banc plat (charge par haltère) : coudes légèrement fléchis, descente contrôlée, les coudes ne passent pas sous le niveau du banc. 2) Presse serrée debout (Svend press) : haltère ou disque serré entre les paumes à hauteur de poitrine, tends les bras devant toi en serrant fort, 1 s bras tendus, reviens lentement, épaules basses. Le serrage compte plus que le poids. Reps = pour chacun des deux.",l:[L("Écartés",2),L("Presse",2)],s:[[[10,10],10],[[12,12],10],[[12,12],10]]},
   {t:"Dips",rest:"1'30",h:"Buste penché en avant. Poids du corps : règle tes reps.",l:[],s:rep([],6,3)},
   {t:"Écartés poulie",rest:"1'",h:"Chiffre affiché sur la colonne. Poulie à hauteur de poitrine, 1 s de contraction.",l:[L("",2.5)],s:[[[7.5],12],[[10],12],[[10],11]]},
+  {t:"Écartés poulie basse vers le haut",rest:"1'",h:"Haut des pecs. Chiffre affiché sur la colonne. Poulies en bas, un petit pas en avant, coudes légèrement fléchis : monte en arc jusqu'à hauteur des yeux, mains qui se rejoignent, 1 s de contraction en haut, redescente lente. Épaules basses : ce sont les pecs qui montent, pas les trapèzes.",l:[L("",2.5)],s:[[[5],10],[[7.5],10],[[5],10]]},
   {t:"Tri-set triceps",rest:"1'30 entre les tours",h:"Poulies : chiffre affiché. Barre au front : poids total, barre EZ comprise. Sans repos entre les 3 : corde 10–12, extension unilatérale 10/bras, barre au front 12–15.",l:[L("Corde",2.5),L("Unilat.",2.5),L("Barre",5)],s:rep([20,7.5,15],null,3)},
   CARDIO,
   ABS]},
@@ -784,6 +785,12 @@ if(!st.pushV8){const P=st.push,sh=k=>{const i=+k;return i>=2?i+1:i};
  P.done=(P.done||[]).map(x=>{const [i,j]=String(x).split("-");return sh(i)+"-"+j});
  if(P.skip&&P.skip.m){const m={};for(const k in P.skip.m)m[sh(k)]=P.skip.m[k];P.skip.m=m}
  st.pushV8=true;sv("salle-v4",st)}
+/* 24/10 : écartés poulie basse insérés en 6e position du Push → même décalage pour l'index 5 et plus */
+if(!st.pushV12){const P=st.push,sh=k=>{const i=+k;return i>=5?i+1:i};
+ const nv={};for(const k in (P.val||{}))nv[sh(k)]=P.val[k];P.val=nv;
+ P.done=(P.done||[]).map(x=>{const [i,j]=String(x).split("-");return sh(i)+"-"+j});
+ if(P.skip&&P.skip.m){const m={};for(const k in P.skip.m)m[sh(k)]=P.skip.m[k];P.skip.m=m}
+ st.pushV12=true;sv("salle-v4",st)}
 function saveSt(){sv("salle-v4",st)}
 function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const n=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-n);const y=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y)/864e5+1)/7)}
 const now=new Date(),day=now.getDay(),legsToday=isoWeek(now)%2===0?"legsA":"legsB";
