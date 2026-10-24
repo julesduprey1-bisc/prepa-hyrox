@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#E6EAEE" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#141A20" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -39,7 +39,10 @@
 html{height:100%;overflow:hidden;overscroll-behavior:none;background:var(--bg);-webkit-text-size-adjust:100%}
 img{max-width:100%}
 body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--font-b)}
-#scroller{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-inline:16px}
+#scroller{flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-inline:16px;touch-action:pan-y}
+/* App fixe à l'horizontale : pas de glissement de côté, pas de zoom au double appui (appuis rapides sur + et −). */
+html,body{touch-action:pan-y;overflow-x:hidden}
+button,select,label,a,input,textarea,nav.tabbar{touch-action:manipulation}
 .wrap{max-width:600px;margin:0 auto;padding-block:16px 32px}
 h1,h2,h3{font-family:var(--font-d);text-wrap:balance;margin:0}
 h1{font-weight:800;font-size:34px;line-height:1}
@@ -566,7 +569,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis et séances reportées ou annulées des 7 derniers jours, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 17 · 24/10</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 18 · 24/10</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
