@@ -394,9 +394,15 @@ function acts(){const m=new Map();
  LIVE.items.forEach(x=>m.set(x.id,x));
  return [...m.values()].map(x=>({...x,k:kind(x)})).sort((a,b)=>(b.d+b.h).localeCompare(a.d+a.h))}
 function seanceDates(){return new Set(SEANCES.map(s=>s.date))}
-function doneOn(date,k,A){
- if(k==="muscu")return A.some(a=>a.d===date&&a.k==="muscu")||seanceDates().has(date);
- return A.some(a=>a.d===date&&a.k===k)}
+const SALLE_TYPE={push:"push",pull:"pull",legsA:"legs",legsB:"legs"};
+function typeSalle(n){n=(n||"").toLowerCase();if(/push/.test(n))return "push";if(/pull/.test(n))return "pull";if(/jambe|legs|squat|épaule|epaule/.test(n))return "legs";return null}
+/* Une activité Strava ne valide que la séance du même type : Push / Pull / Jambes (titre lu par la mise à jour de nuit).
+   Titre générique (« Entraînement aux poids ») : elle compte pour la séance de salle du jour. */
+function matchAct(a,date,it){if(a.d!==date||a.k!==it.k)return false;if(it.k!=="muscu"||!it.salle)return true;
+ const t=a.s||typeSalle(a.n);return !t||t===it.salle}
+function doneOn(date,k,A,it){it=it||{k};
+ if(k==="muscu"&&SEANCES.some(x=>x.date===date&&(!it.salle||SALLE_TYPE[x.seance]===it.salle)))return true;
+ return A.some(a=>matchAct(a,date,it))}
 function weekStat(w,A){const e=addD(w.start,6);const inW=A.filter(a=>a.d>=w.start&&a.d<=e);
  const runs=inW.filter(a=>a.k==="run");const md=new Set(inW.filter(a=>a.k==="muscu").map(a=>a.d));
  SEANCES.forEach(s=>{if(s.date>=w.start&&s.date<=e)md.add(s.date)});
@@ -501,7 +507,7 @@ function itemDetail(it){
 function statusOf(date,it,A){
  if(it.k==="repos")return null;
  if(it.cancel)return ["annule","Annulé"];
- const done=doneOn(date,it.k,A);
+ const done=doneOn(date,it.k,A,it);
  if(done)return ["fait","✓ Fait"];
  if(date<TODAY)return it.k==="kine"?["","Non relevée"]:["manque","✕ Manqué"];
  if(date===TODAY)return ["jour","● Aujourd'hui"];
@@ -510,7 +516,7 @@ function statusOf(date,it,A){
 function itemRow(d,it,isT,s,w){
  const chips=(it.moved?`<span class="chip moved">Reporté du ${dm(it.moved)}</span>`:"")+(it.k==="kine"?`<span class="chip lock">RDV</span>`:it.lock?`<span class="chip lock">Fixe</span>`:it.cut?`<span class="chip">Coupe ${it.cut}</span>`:"");
  let h=`<div class="it ${it.cancel?"cancel":""}"><div class="txt"><strong>${chips}${esc(it.t)}</strong>
-  ${it.note&&!it.cancel?`<span class="small">${esc(it.note)}</span>`:""}${it.k==="kine"&&!it.cancel?`<span class="muted small">10h30</span>`:""}${it.k==="run"&&!it.cancel?`<span class="muted small">${it.ld?"6 lignes droites · ":""}${it.ref?"Protocole de référence · ":""}FC 130–140</span>`:""}${s&&s[0]==="fait"?(re=>re?`<span class="muted small">Effort relatif ${re}</span>`:"")(acts().filter(a=>a.d===d.date&&a.k===it.k).reduce((n,a)=>n+(+a.re||0),0)):""}
+  ${it.note&&!it.cancel?`<span class="small">${esc(it.note)}</span>`:""}${it.k==="kine"&&!it.cancel?`<span class="muted small">10h30</span>`:""}${it.k==="run"&&!it.cancel?`<span class="muted small">${it.ld?"6 lignes droites · ":""}${it.ref?"Protocole de référence · ":""}FC 130–140</span>`:""}${s&&s[0]==="fait"?(re=>re?`<span class="muted small">Effort relatif ${re}</span>`:"")(acts().filter(a=>matchAct(a,d.date,it)).reduce((n,a)=>n+(+a.re||0),0)):""}
   <span class="row" style="gap:14px">${it.salle&&!isT&&!it.cancel?`<button class="link" data-salle="${it.salle}">Checklist</button>`:""}${it.k!=="repos"&&!(s&&s[0]==="fait")?`<button class="link small-link" data-edit="${it.key}">${EDIT===it.key?"Fermer":"Reporter / annuler"}</button>`:""}</span></div>${s?`<span class="st ${s[0]}">${s[1]}</span>`:""}</div>`;
  if(EDIT===it.key){
   const from=TODAY>w.start?TODAY:w.start,end=addD(w.start,6),opts=[];
@@ -535,7 +541,7 @@ function renderSemaine(){
  // Aujourd'hui
  const td=D.find(d=>d.date===TODAY);
  if(td){h+=`<div class="block"><span class="eyebrow">Aujourd'hui</span>${adjHTML(conseil(TODAY,A),"Ajustement du jour")}<div class="todo">${td.items.map(it=>{const s=statusOf(TODAY,it,A);
-   const ret=A.filter(a=>a.d===TODAY&&a.k===it.k).map(a=>retourSeance(a,A)).filter(Boolean).join(" · ");
+   const ret=A.filter(a=>matchAct(a,TODAY,it)).map(a=>retourSeance(a,A)).filter(Boolean).join(" · ");
    return `<div class="card k-${it.k}"><div class="row between"><h3>${it.moved?`<span class="chip moved">Reporté du ${dm(it.moved)}</span>`:""}${esc(it.t)}</h3>${s?`<span class="st ${s[0]}">${s[1]}</span>`:""}</div>
    ${it.note?`<p><strong>${esc(it.note)}</strong></p>`:""}${itemDetail(it)?`<p class="muted small">${esc(itemDetail(it))}</p>`:""}
    ${it.ref?`<ol class="proto">${REF_PROTO.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`:""}
@@ -569,7 +575,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis et séances reportées ou annulées des 7 derniers jours, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 18 · 24/10</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 19 · 25/10</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -953,10 +959,28 @@ if(!st.pushV13){const P=st.push,sh=k=>{const i=+k;return i>=6?i+1:i};
  P.done=(P.done||[]).map(x=>{const [i,j]=String(x).split("-");return sh(i)+"-"+j});
  if(P.skip&&P.skip.m){const m={};for(const k in P.skip.m)m[sh(k)]=P.skip.m[k];P.skip.m=m}
  st.pushV13=true;sv("salle-v4",st)}
+function recapLinesFor(id,date){const x=st[id],H=(x.hist||{})[date]||{},sk=(x.skip&&x.skip.date===date)?x.skip.m:{},done=new Set(x.done||[]);
+ return S[id].ex.map((_,i)=>{const k=H[i]||S[id].ex[i].k,ex=exFor(id,i,k);if(sk[i]===true)return ex.t+" : non fait";
+  const sets=ex.s.map((_,j)=>done.has(i+"-"+j)?summary(ex,valFor(id,i,j,k)):"").filter(Boolean);
+  return ex.t+(sets.length?" : "+sets.join(" / "):" : non fait")})}
+function clotureAuto(){if(new Date().getHours()<4)return;let ch=false;
+ for(const id in S){const x=st[id];if(!x||!(x.done||[]).length)continue;
+  if(!x.date){const idx=new Set(x.done.map(d=>String(d).split("-")[0]));let last=null;
+   for(const d in (x.hist||{}))if(Object.keys(x.hist[d]).some(i=>idx.has(i))&&(!last||d>last))last=d;
+   if(last===TODAY){x.date=TODAY;ch=true;continue}}
+  if(x.date===TODAY)continue;
+  if(x.date&&!SEANCES.some(r=>r.date===x.date&&r.seance===id)){
+   SEANCES=[{date:x.date,seance:id,titre:S[id].title,lignes:recapLinesFor(id,x.date),enregistreLe:new Date().toISOString(),auto:true},...SEANCES].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,80);sv("prepa-seances",SEANCES)}
+  x.done=[];x.skip=null;x.pick=null;delete x.date;ch=true}
+ if(ch)saveSt()}
+if(!st.seancesV19){let ch=false;SEANCES.forEach(r=>{if(!r.auto&&r.seance==="push"&&r.date==="2026-10-25"&&String(r.enregistreLe||"")<"2026-10-25T12:00"&&!SEANCES.some(o=>o.seance==="push"&&o.date==="2026-10-24")){r.date="2026-10-24";ch=true}});
+ if(ch)sv("prepa-seances",SEANCES);st.seancesV19=true;sv("salle-v4",st)}
+clotureAuto();
 function saveSt(){sv("salle-v4",st)}
 function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const n=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-n);const y=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y)/864e5+1)/7)}
 const now=new Date(),day=now.getDay(),legsToday=isoWeek(now)%2===0?"legsA":"legsB";
-const def=day===3?"pull":day===5?legsToday:"push";
+const planSalle=(()=>{try{const w=WEEKS.find(w=>TODAY>=w.start&&TODAY<=addD(w.start,6));if(!w)return null;const d=effDays(w).find(x=>x.date===TODAY);const it=d&&d.items.find(x=>x.k==="muscu"&&!x.cancel);return it?it.salle:null}catch(e){return null}})();
+const def=planSalle?(planSalle==="legs"?legsToday:planSalle):day===3?"pull":day===5?legsToday:"push";
 let cur=ld("salle-tab-day",null)===now.toDateString()?ld("salle-tab",def):def;
 if(!S[cur])cur=def;
 let SAVE_MSG="";
@@ -968,17 +992,20 @@ function pickKey(id,i){const ex=S[id].ex[i],p=st[id].pick;
  const c=histCount(id,i);let best=ex.k,bv=(c[ex.k]||0)+0.5;
  for(const k in c)if(c[k]>bv&&slotOpts(id,i).some(o=>o.k===k)){best=k;bv=c[k]}
  return best}
-function exAt(id,i){const ex=S[id].ex[i],k=pickKey(id,i);if(!k||k===ex.k)return ex;
+function exAt(id,i){return exFor(id,i,pickKey(id,i))}
+function exFor(id,i,k){const ex=S[id].ex[i];if(!k||k===ex.k)return ex;
  const e=(CAT[ex.g]||[]).find(x=>x.k===k);if(!e)return ex;
  return {...e,g:ex.g,rest:e.rest||ex.rest,s:ex.s.map(([kg,r])=>[(e.d||[]).slice(),e.r!==undefined?e.r:r])}}
 function setPick(id,i,k){const x=st[id];if(!x.pick||x.pick.date!==TODAY)x.pick={date:TODAY,m:{}};x.pick.m[i]=k;
  x.done=(x.done||[]).filter(d=>String(d).split("-")[0]!==String(i));saveSt();renderSalle()}
 function noteHist(id,i){const x=st[id];x.hist=x.hist||{};(x.hist[TODAY]=x.hist[TODAY]||{})[i]=pickKey(id,i);
  const lim=addD(TODAY,-180);for(const d in x.hist)if(d<lim)delete x.hist[d]}
-function vstore(id,i){const ex=S[id].ex[i],k=pickKey(id,i),x=st[id];
+function vstore(id,i){return vstoreFor(id,i,pickKey(id,i))}
+function vstoreFor(id,i,k){const ex=S[id].ex[i],x=st[id];
  if(!k||k===ex.k){x.val[i]=x.val[i]||{};return x.val[i]}
  x.vx=x.vx||{};return x.vx[i+"|"+k]||(x.vx[i+"|"+k]={})}
-function val(id,i,j){const d=exAt(id,i).s[j],v=vstore(id,i)[j];
+function val(id,i,j){return valFor(id,i,j,pickKey(id,i))}
+function valFor(id,i,j,k){const d=exFor(id,i,k).s[j],v=vstoreFor(id,i,k)[j];
  return {kg:(v&&v.kg&&v.kg.length===d[0].length)?v.kg.slice():d[0].slice(),r:(v&&v.r!=null)?v.r:d[1]}}
 function setVal(id,i,j,v){vstore(id,i)[j]=v;saveSt();renderSalle()}
 function fmtK(n){return String(n).replace(".",",")}
@@ -995,8 +1022,8 @@ function efToday(){const w=WEEKS.find(w=>TODAY>=w.start&&TODAY<=addD(w.start,6))
 function isSkipped(id,i){const ex=S[id].ex[i];const m=skipMap(id);if(i in m)return m[i];return ex===CARDIO&&efToday()}
 function setSkip(id,i,v){const x=st[id];if(!x.skip||x.skip.date!==TODAY)x.skip={date:TODAY,m:{}};x.skip.m[i]=v;saveSt();renderSalle()}
 function recapLines(){const sess=S[cur];return sess.ex.map((_,i)=>{const ex=exAt(cur,i);if(isSkipped(cur,i))return ex.t+" : non fait";const sets=ex.s.map((_,j)=>summary(ex,val(cur,i,j))).filter(Boolean);return ex.t+(sets.length?" : "+sets.join(" / "):" : fait")})}
-function saveSeance(){const sess=S[cur];const rec={date:TODAY,seance:cur,titre:sess.title,lignes:recapLines(),enregistreLe:new Date().toISOString()};
- SEANCES=[rec,...SEANCES.filter(x=>!(x.date===TODAY&&x.seance===cur))].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,80);sv("prepa-seances",SEANCES);
+function saveSeance(){const sess=S[cur],dt=st[cur].date||TODAY;const rec={date:dt,seance:cur,titre:sess.title,lignes:recapLines(),enregistreLe:new Date().toISOString()};
+ SEANCES=[rec,...SEANCES.filter(x=>!(x.date===dt&&x.seance===cur))].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,80);sv("prepa-seances",SEANCES);
  SAVE_MSG="Enregistrée. Envoie-la moi depuis l'onglet Semaine.";renderSalle();renderSemaine()}
 function renderSalle(){
  const tabs=$("#stabs"),list=$("#slist");tabs.innerHTML="";
@@ -1034,7 +1061,7 @@ function renderSalle(){
    b.innerHTML=`<span class="box"></span><span class="lbl"></span>`;
    const lab=(ex.s.length>1?(ex.t.startsWith("Tri-set")||ex.t.startsWith("Superset")?"Tour ":"Série ")+(j+1):"")+(summary(ex,v)?" — "+summary(ex,v):"");
    b.querySelector(".lbl").textContent=lab;
-   b.onclick=()=>{if(done.has(id))done.delete(id);else{done.add(id);noteHist(cur,i)}s.done=[...done];saveSt();renderSalle()};
+   b.onclick=()=>{if(done.has(id))done.delete(id);else{if(!done.size||!s.date)s.date=TODAY;done.add(id);noteHist(cur,i)}s.done=[...done];saveSt();renderSalle()};
    blk.appendChild(b);
    const ctl=document.createElement("div");ctl.className="ctl";
    ex.l.forEach((l,m)=>ctl.appendChild(stepper((l.n?l.n+" ":"")+fmtK(v.kg[m])+" kg",
@@ -1045,7 +1072,7 @@ function renderSalle(){
    sec.appendChild(blk)});
   list.appendChild(sec)});
  if(total>0&&doneN===total){
-  const txt=sess.title+" — "+now.toLocaleDateString("fr-FR")+"\n"+recapLines().join("\n");
+  const txt=sess.title+" — "+(s.date||TODAY).split("-").reverse().join("/")+"\n"+recapLines().join("\n");
   const rc=document.createElement("div");rc.className="recap";
   rc.innerHTML=`<h2>Séance terminée</h2><pre></pre><div class="row"><button class="btn" id="ssave">Enregistrer dans mon suivi</button><button class="btn ghost" id="scopy">Copier le récap</button></div><p class="muted small" id="smsg"></p>`;
   rc.querySelector("pre").textContent=txt;
@@ -1054,7 +1081,7 @@ function renderSalle(){
   rc.querySelector("#scopy").onclick=()=>{navigator.clipboard.writeText(txt).then(()=>{rc.querySelector("#smsg").textContent="Récap copié."}).catch(()=>{const r=document.createRange();r.selectNodeContents(rc.querySelector("pre"));const sel=getSelection();sel.removeAllRanges();sel.addRange(r);rc.querySelector("#smsg").textContent="Texte sélectionné : copie-le."})};
   list.prepend(rc)}
  const r=document.createElement("button");r.className="reset";r.textContent="Nouvelle séance (décoche tout, garde tes charges)";
- r.onclick=()=>{s.done=[];s.skip=null;s.pick=null;SAVE_MSG="";saveSt();renderSalle()};list.appendChild(r);
+ r.onclick=()=>{s.done=[];s.skip=null;s.pick=null;delete s.date;SAVE_MSG="";saveSt();renderSalle()};list.appendChild(r);
  $("#sfill").style.width=(total?doneN/total*100:0)+"%";
  $("#scount").textContent=doneN+" / "+total+" séries";
  $("#sstatus").textContent=total>0&&doneN===total?"Séance terminée":"";

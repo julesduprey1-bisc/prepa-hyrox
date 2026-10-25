@@ -31,6 +31,18 @@ def nom(a):
     return n[:80] or t
 
 
+def salle(a):
+    """Type de séance de salle lu dans le titre Strava (seul le type est gardé, pas le titre)."""
+    n = (a.get("name") or "").lower()
+    if "push" in n:
+        return "push"
+    if "pull" in n:
+        return "pull"
+    if re.search(r"jambe|legs|squat|[ée]paule", n):
+        return "legs"
+    return None
+
+
 def kine_du_matin(x):
     """Kiné tous les mardis et jeudis à 10h30 (Jules, 14/10) : la montre l'enregistre en « poids »."""
     if x["t"] not in ("WeightTraining", "Workout") or not x["d"]:
@@ -48,6 +60,7 @@ def item(a):
         "km": round((s.get("distance") or 0) / 1000, 2),
         "min": round((s.get("moving_time") or 0) / 60, 1),
         "re": s.get("relative_effort"),
+        "s": salle(a),
     }
 
 
