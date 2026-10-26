@@ -44,8 +44,9 @@ def salle(a):
 
 
 def kine_du_matin(x):
-    """Kiné tous les mardis et jeudis à 10h30 (Jules, 14/10) : la montre l'enregistre en « poids »."""
-    if x["t"] not in ("WeightTraining", "Workout") or not x["d"]:
+    """Kiné tous les mardis et jeudis à 10h30 (Jules, 14/10) : la montre l'enregistre en « poids ».
+    Une séance titrée Push / Pull / Jambes sur Strava reste de la muscu (Push du jeudi 15/10 à 10h36)."""
+    if x["t"] not in ("WeightTraining", "Workout") or not x["d"] or x.get("s"):
         return False
     jour = datetime.date.fromisoformat(x["d"]).weekday()  # 1 = mardi, 3 = jeudi
     return jour in (1, 3) and "09:45" <= x["h"] <= "11:45"
@@ -86,7 +87,11 @@ def main():
         del fusion[i]
     for i, x in recus.items():
         if i in fusion:
-            x["n"] = fusion[i]["n"]  # garde le nom déjà nettoyé
+            ancien = fusion[i]["n"]
+            # Garde le nom déjà nettoyé, sauf si Jules l'a renommée « Kiné » sur Strava (kiné hors mardi/jeudi),
+            # ou si une séance classée kiné porte en fait un titre Push / Pull / Jambes.
+            if x["n"] != "Kiné" and not (ancien == "Kiné" and x.get("s")):
+                x["n"] = ancien
         fusion[i] = x
 
     for x in fusion.values():
