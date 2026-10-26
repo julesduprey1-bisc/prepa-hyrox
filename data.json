@@ -1,9 +1,31 @@
 {
- "maj": "2026-10-25T21:55",
+ "maj": "2026-10-26T21:56",
  "strava": {
-  "maj": "2026-10-25T21:55",
+  "maj": "2026-10-26T21:56",
   "source": "Strava list_activities, du 01/07 au 12/10/2026",
   "items": [
+   {
+    "id": "20738902646",
+    "n": "Marche dans l'après-midi",
+    "t": "Walk",
+    "d": "2026-10-26",
+    "h": "14:00",
+    "km": 3.73,
+    "min": 57.0,
+    "re": 5,
+    "s": null
+   },
+   {
+    "id": "20736247172",
+    "n": "Entraînement aux poids le midi",
+    "t": "WeightTraining",
+    "d": "2026-10-26",
+    "h": "11:36",
+    "km": 0.0,
+    "min": 70.0,
+    "re": 9,
+    "s": null
+   },
    {
     "id": "20722244072",
     "n": "Marche le matin",
