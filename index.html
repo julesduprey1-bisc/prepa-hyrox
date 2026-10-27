@@ -21,17 +21,17 @@
 :root{
   --bg:#E6EAEE;--panel:#F7F9FA;--ink:#1C2530;--muted:#5B6773;--line:#C9D1D8;
   --plate:#F2B705;--plate-ink:#1C2530;--done:#2F7A52;--miss:#B4372B;--warn:#9A5B00;
-  --run:#2F5F8F;--band:rgba(47,95,143,.12);--soft:#EEF1F4;
+  --run:#2F5F8F;--wod:#93B7DC;--band:rgba(47,95,143,.12);--soft:#EEF1F4;
   --font-d:"Barlow Condensed","Arial Narrow",sans-serif;
   --font-b:Barlow,system-ui,-apple-system,sans-serif;
   --navh:64px;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#141A20;--panel:#1D252D;--ink:#E6EAEE;--muted:#93A0AC;--line:#2E3943;
-  --done:#4FB47F;--miss:#E37466;--warn:#E0A040;--run:#7FB0E0;--band:rgba(127,176,224,.14);--soft:#232C35;color-scheme:dark}}
+  --done:#4FB47F;--miss:#E37466;--warn:#E0A040;--run:#7FB0E0;--wod:#3F6E9C;--band:rgba(127,176,224,.14);--soft:#232C35;color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#141A20;--panel:#1D252D;--ink:#E6EAEE;--muted:#93A0AC;--line:#2E3943;
-  --done:#4FB47F;--miss:#E37466;--warn:#E0A040;--run:#7FB0E0;--band:rgba(127,176,224,.14);--soft:#232C35;color-scheme:dark}
+  --done:#4FB47F;--miss:#E37466;--warn:#E0A040;--run:#7FB0E0;--wod:#3F6E9C;--band:rgba(127,176,224,.14);--soft:#232C35;color-scheme:dark}
 *,*::before,*::after{box-sizing:border-box}
 [hidden]{display:none!important}
 /* Coque d'app : html et body ne défilent jamais (sur iPhone, un bandeau « fixed » se décale quand la page défile
@@ -238,6 +238,10 @@ button.set[aria-pressed="true"] .lbl{text-decoration:line-through}
 .chipbtn[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .chipbtn:disabled{cursor:default}
 .addlink{align-self:flex-start}
+.wodkm{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0}
+.step.sm button{width:34px;min-height:36px;font-size:19px}
+.step.sm span{min-width:62px;font-size:15px}
+.chart .bar.wod{fill:var(--wod)}
 .tpl{display:flex;flex-direction:column}
 .tplrow{display:grid;grid-template-columns:44px 1fr;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:15px}
 .tplrow .d{font:600 13px var(--font-b);letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding-top:2px}
@@ -442,7 +446,7 @@ function toItem(a){const s=a.summary||{};const st=a.start_local||"";
  return {id:String(a.id),n:a.name||"",t:a.sport_type||"",d:st.slice(0,10),h:st.slice(11,16),km:Math.round((s.distance||0)/10)/100,min:Math.round((s.moving_time||0)/6)/10,re:s.relative_effort??null}}
 function kind(x){const t=x.t,n=x.n||"";
  if(t==="Run"||t==="TrailRun"||t==="VirtualRun"){if(/hyrox\s*race/i.test(n))return "course";if(/marche/i.test(n)||(x.min!=null&&x.min<10))return "marche";return "run"}
- if(t==="HighIntensityIntervalTraining"||t==="Crossfit")return "box";
+ if(t==="HighIntensityIntervalTraining"||t==="Crossfit")return x.min!=null&&x.min<10?"autre":"box"; // moins de 10' : échauffement ou essai, pas une box
  if(t==="PhysicalTherapy"||/kin[ée]/i.test(n))return "kine";
  if(t==="WeightTraining"||t==="Workout"){
   if(x.d&&!(x.s||typeSalle(n))){const c=kineCtx(x.d);if(c.kine&&(!c.salle||(x.h>="09:45"&&x.h<="11:45")))return "kine"}
@@ -453,6 +457,11 @@ function acts(){const m=new Map();
  ((SNAP&&SNAP.items)||[]).forEach(x=>m.set(String(x.id),x));
  LIVE.items.forEach(x=>m.set(x.id,x));
  return [...m.values()].map(x=>({...x,k:kind(x)})).sort((a,b)=>(b.d+b.h).localeCompare(a.d+a.h))}
+/* Course faite pendant une box / un WOD (demande de Jules, 27/10) : comptée dans les km de la semaine.
+   Valeur lue dans la description Strava par le contrôle du soir (kb), sauf correction sur le téléphone
+   (« prepa-boxkm ») ou recopiée par Claude dans data.json (« boxkm »). */
+let BOXKM=ld("prepa-boxkm",{}),BOXKM_SRV={};
+function kmWod(a){if(a.k!=="box")return 0;const v=BOXKM[a.id]??BOXKM_SRV[a.id];return v!=null?+v:(+a.kb||0)}
 function seanceDates(){return new Set(SEANCES.map(s=>s.date))}
 const SALLE_TYPE={push:"push",pull:"pull",legsA:"legs",legsB:"legs"};
 function typeSalle(n){n=(n||"").toLowerCase();if(/push/.test(n))return "push";if(/pull/.test(n))return "pull";if(/jambe|legs|squat|épaule|epaule/.test(n))return "legs";return null}
@@ -466,7 +475,8 @@ function doneOn(date,k,A,it){it=it||{k};
 function weekStat(w,A){const e=addD(w.start,6);const inW=A.filter(a=>a.d>=w.start&&a.d<=e);
  const runs=inW.filter(a=>a.k==="run");const md=new Set(inW.filter(a=>a.k==="muscu").map(a=>a.d));
  SEANCES.forEach(s=>{if(s.date>=w.start&&s.date<=e)md.add(s.date)});
- return {km:runs.reduce((s,a)=>s+a.km,0),runs:runs.length,box:inW.filter(a=>a.k==="box").length,kine:inW.filter(a=>a.k==="kine").length,muscu:md.size,ended:TODAY>e,started:TODAY>=w.start}}
+ const kmRun=runs.reduce((s,a)=>s+a.km,0),kmW=inW.reduce((s,a)=>s+kmWod(a),0);
+ return {km:kmRun+kmW,kmRun,kmWod:kmW,runs:runs.length,box:inW.filter(a=>a.k==="box").length,kine:inW.filter(a=>a.k==="kine").length,muscu:md.size,ended:TODAY>e,started:TODAY>=w.start}}
 function lastOf(k,A){let a=A.find(x=>x.k===k);let d=a?a.d:null;
  if(k==="muscu"&&SEANCES.length){const s=SEANCES[0].date;if(!d||s>d)d=s}return d}
 function srcLabel(){const m=SNAP&&SNAP.maj?dm(SNAP.maj)+(SNAP.maj.length>10?" à "+SNAP.maj.slice(11,16).replace(":","h"):""):null;return {c:m?"live":"warn",t:m?"Strava vérifié le "+m+" · contrôle chaque soir vers 22h":"Chargement des données…"}}
@@ -576,10 +586,12 @@ function statusOf(date,it,A){
 function itemRow(d,it,isT,s,w){
  const chips=(it.moved?`<span class="chip moved">Déplacée du ${dm(it.moved)}</span>`:"")+(it.added?`<span class="chip moved">Ajoutée</span>`:"")+(it.k==="kine"?`<span class="chip lock">RDV</span>`:it.lock?`<span class="chip lock">Fixe</span>`:it.cut?`<span class="chip">Coupe ${it.cut}</span>`:"");
  let h=`<div class="it ${it.cancel?"cancel":""}"><div class="txt"><strong>${chips}${esc(it.t)}</strong>
-  ${it.note&&!it.cancel?`<span class="small">${esc(it.note)}</span>`:""}${it.k==="kine"&&!it.cancel&&it.h?`<span class="muted small">${esc(it.h)}</span>`:""}${it.k==="run"&&!it.cancel?`<span class="muted small">${it.ld?"6 lignes droites · ":""}${it.ref?"Protocole de référence · ":""}FC 130–140</span>`:""}${s&&s[0]==="fait"?(re=>re?`<span class="muted small">Effort relatif ${re}</span>`:"")(acts().filter(a=>matchAct(a,d.date,it)).reduce((n,a)=>n+(+a.re||0),0)):""}
+  ${it.note&&!it.cancel?`<span class="small">${esc(it.note)}</span>`:""}${it.k==="kine"&&!it.cancel&&it.h?`<span class="muted small">${esc(it.h)}</span>`:""}${it.k==="run"&&!it.cancel?`<span class="muted small">${it.ld?"6 lignes droites · ":""}${it.ref?"Protocole de référence · ":""}FC 130–140</span>`:""}${s&&s[0]==="fait"?(re=>re?`<span class="muted small">Effort relatif ${re}</span>`:"")(acts().filter(a=>matchAct(a,d.date,it)).reduce((n,a)=>n+(+a.re||0),0)):""}${it.k==="box"&&s&&s[0]==="fait"?wodRow(acts().find(a=>matchAct(a,d.date,it))):""}
   <span class="row" style="gap:14px">${it.salle&&!isT&&!it.cancel?`<button class="link" data-salle="${it.salle}">Checklist</button>`:""}${it.k!=="repos"?`<button class="link small-link" data-edit="${it.key}">${EDIT===it.key?"Fermer":"Modifier"}</button>`:""}</span></div>${s?`<span class="st ${s[0]}">${s[1]}</span>`:""}</div>`;
  if(EDIT===it.key)h+=editPanel(d,it,w);
  return h}
+function wodRow(a){if(!a)return "";const v=kmWod(a),src=BOXKM[a.id]!=null?"corrigé":BOXKM_SRV[a.id]!=null||a.kb?"lu sur Strava":"à renseigner";
+ return `<span class="wodkm"><span class="muted small">Course dans le WOD${src?` (${src})`:""}</span><span class="step sm"><button type="button" data-bkm="${esc(a.id)}" data-dv="-0.2" aria-label="Moins 200 m">−</button><span>${fr(v)} km</span><button type="button" data-bkm="${esc(a.id)}" data-dv="0.2" aria-label="Plus 200 m">+</button></span></span>`}
 /* Modifier une séance : cette semaine (n'importe quel jour, même passé) ou chaque semaine (semaine type) */
 function editPanel(d,it,w){
  const days=[];for(let i=0;i<7;i++){const x=addD(w.start,i);if(x!==d.date)days.push(x)}
@@ -620,7 +632,7 @@ function renderSemaine(){
  // Aujourd'hui
  const td=D.find(d=>d.date===TODAY);
  if(td){h+=`<div class="block"><span class="eyebrow">Aujourd'hui</span>${adjHTML(conseil(TODAY,A),"Ajustement du jour")}<div class="todo">${td.items.map(it=>{const s=statusOf(TODAY,it,A);
-   const ret=A.filter(a=>matchAct(a,TODAY,it)).map(a=>retourSeance(a,A)).filter(Boolean).join(" · ");
+   const ret=A.filter(a=>matchAct(a,TODAY,it)).map(a=>[retourSeance(a,A),kmWod(a)?fr(kmWod(a))+" km courus":""].filter(Boolean).join(" · ")).filter(Boolean).join(" · ");
    return `<div class="card k-${it.k}"><div class="row between"><h3>${it.moved?`<span class="chip moved">Déplacée du ${dm(it.moved)}</span>`:it.added?`<span class="chip moved">Ajoutée</span>`:""}${esc(it.t)}</h3>${s?`<span class="st ${s[0]}">${s[1]}</span>`:""}</div>
    ${it.note?`<p><strong>${esc(it.note)}</strong></p>`:""}${itemDetail(it)?`<p class="muted small">${esc(itemDetail(it))}</p>`:""}
    ${it.ref?`<ol class="proto">${REF_PROTO.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`:""}
@@ -630,7 +642,7 @@ function renderSemaine(){
  // Tuiles (objectifs = séances prévues cette semaine, changements compris)
  const plan=D.flatMap(d=>d.items).filter(x=>!x.cancel),nb=k=>plan.filter(x=>x.k===k).length;
  h+=`<div class="tiles">
-  <div class="tile wide"><span class="eyebrow">Course</span><b>${fr(st.km)}<small> / ${fr(w.km)} km</small></b><div class="meter"><span style="width:${pct}%"></span></div></div>
+  <div class="tile wide"><span class="eyebrow">Course</span><b>${fr(st.km)}<small> / ${fr(w.km)} km</small></b><div class="meter"><span style="width:${pct}%"></span></div>${st.kmWod>0?`<span class="muted small">dont ${fr(st.kmWod)} km courus en WOD</span>`:""}</div>
   <div class="tile"><span class="eyebrow">EF</span><b>${st.runs}<small> / ${nb("run")}</small></b><span class="muted small">fixes</span></div>
   <div class="tile"><span class="eyebrow">Box</span><b>${st.box}<small> / ${nb("box")}</small></b><span class="muted small">fixes</span></div>
   <div class="tile"><span class="eyebrow">Kiné</span><b>${st.kine}<small> / ${nb("kine")}</small></b><span class="muted small">RDV</span></div>
@@ -656,7 +668,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis, séances déplacées, annulées ou ajoutées des 7 derniers jours et ta semaine type, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 20 · 27/10</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 21 · 27/10</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -683,6 +695,9 @@ function renderSemaine(){
   if(ADD_REC)editProg(w.start,sl=>[...sl,{id:"x"+uid,d:diff(w.start,date),...ty.it}]);
   else{MODS[w.start+"|+"+uid]={s:"ajout",date,it:{...ty.it},le:TODAY};saveMods()}
   ADD=null;ADD_REC=false;renderSemaine()});
+ el.querySelectorAll("[data-bkm]").forEach(b=>b.onclick=()=>{const id=b.dataset.bkm,a=acts().find(x=>x.id===id);
+  const v=Math.max(0,Math.round(((a?kmWod(a):0)+ +b.dataset.dv)*10)/10);if(a&&v===(+a.kb||0)&&BOXKM_SRV[id]==null)delete BOXKM[id];else BOXKM[id]=v;
+  sv("prepa-boxkm",BOXKM);renderSemaine();renderCourse()});
  const pr=$("#progreset");if(pr)pr.onclick=()=>{editProg(w.start,()=>SLOTS0.map(x=>({...x})));renderSemaine()};
  el.querySelectorAll("[data-cancel]").forEach(b=>b.onclick=()=>{const k=b.dataset.cancel;const it=effDays(w).flatMap(x=>x.items).find(x=>x.key===k);
   if(it&&it.lock&&CONFIRM!==k){CONFIRM=k;renderSemaine();return}MODS[k]={s:"annule",le:TODAY};EDIT=null;CONFIRM=null;saveMods();renderSemaine()});
@@ -732,6 +747,8 @@ function coachText(){const from=addD(TODAY,-6);
  t+="\n\nSéances déplacées / annulées / ajoutées :\n"+(mo.length?mo.join("\n"):"- aucune");
  const pv=PROG.map(v=>{const x=progDiff(v.slots);return `- à partir du ${dm(v.from)} : ${x.length?x.join(" ; "):"programme d'origine"}`});
  if(pv.length)t+="\n\nSemaine type modifiée :\n"+pv.join("\n");
+ const bk=acts().filter(a=>BOXKM[a.id]!=null&&a.d>=from).map(a=>`- ${dm(a.d)} ${a.n.split("\n")[0]} : ${fr(BOXKM[a.id])} km`);
+ if(bk.length)t+="\n\nCourse dans les WOD (corrigée) :\n"+bk.join("\n");
  t+="\n\nRessenti :\n"+(re.length?re.map(r=>`- ${dm(r.date)} forme ${r.forme}/5${r.symptomes?" · symptômes":""}${r.note?" · "+r.note:""}`).join("\n"):"- aucun");
  return t}
 async function shareCoach(){const t=coachText(),m=$("#sendmsg");
@@ -742,21 +759,23 @@ async function shareCoach(){const t=coachText(),m=$("#sendmsg");
 function volChart(A){
  const start="2026-07-06",end=WEEKS[WEEKS.length-1].start,cw=monday(TODAY);
  const data=[];for(let w=start;w<=end;w=addD(w,7)){const e=addD(w,6);const p=WEEKS.find(x=>x.start===w);
-  data.push({w,km:A.filter(a=>a.k==="run"&&a.d>=w&&a.d<=e).reduce((s,a)=>s+a.km,0),target:p?p.km:null,s:p?p.s:null,future:w>cw,cur:w===cw})}
+  const inW=A.filter(a=>a.d>=w&&a.d<=e),kr=inW.filter(a=>a.k==="run").reduce((s,a)=>s+a.km,0),kw=inW.reduce((s,a)=>s+kmWod(a),0);
+  data.push({w,km:kr+kw,kmWod:kw,target:p?p.km:null,s:p?p.s:null,future:w>cw,cur:w===cw})}
  const W=360,H=200,m={l:24,r:4,t:10,b:22},iw=W-m.l-m.r,ih=H-m.t-m.b;
  const ymax=Math.ceil(Math.max(12,...data.map(d=>Math.max(d.km,d.target||0)))/4)*4;
  const y=v=>m.t+ih-v/ymax*ih,bw=iw/data.length;
  let g="";for(let v=0;v<=ymax;v+=4)g+=`<line class="grid" x1="${m.l}" x2="${W-m.r}" y1="${y(v)}" y2="${y(v)}"/><text x="${m.l-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`;
  data.forEach((d,i)=>{const x=m.l+i*bw,cx=x+bw/2,w=Math.max(4,bw*.62),bx=cx-w/2;
   if(!d.future&&d.km>0){const top=y(d.km),hgt=y(0)-top,r=Math.min(4,hgt);
-   g+=`<path class="bar ${d.cur?"cur":""}" d="M${bx},${y(0)}V${top+r}Q${bx},${top} ${bx+r},${top}H${bx+w-r}Q${bx+w},${top} ${bx+w},${top+r}V${y(0)}Z"/>`}
+   g+=`<path class="bar ${d.cur?"cur":""}" d="M${bx},${y(0)}V${top+r}Q${bx},${top} ${bx+r},${top}H${bx+w-r}Q${bx+w},${top} ${bx+w},${top+r}V${y(0)}Z"/>`;
+   if(d.kmWod>0){const ht=Math.max(1.5,y(0)-y(d.kmWod));g+=`<rect class="bar wod" x="${bx}" y="${top}" width="${w}" height="${Math.min(ht,hgt)}"/>`}}
   if(d.target!=null)g+=`<line class="target" x1="${bx-2}" x2="${bx+w+2}" y1="${y(d.target)}" y2="${y(d.target)}"/>`;
   if(i%3===0||d.cur)g+=`<text x="${cx}" y="${H-8}" text-anchor="middle" ${d.cur?'class="lbl"':""}>${d.s?"S"+d.s:dm(d.w)}</text>`;
-  const tipT=`Semaine du ${dm(d.w)}${d.s?" · S"+d.s:""}\n${d.future?"à venir":fr(d.km)+" km de course"}${d.target!=null?"\nobjectif "+fr(d.target)+" km":""}`;
+  const tipT=`Semaine du ${dm(d.w)}${d.s?" · S"+d.s:""}\n${d.future?"à venir":fr(d.km)+" km de course"+(d.kmWod>0?" (dont "+fr(d.kmWod)+" en WOD)":"")}${d.target!=null?"\nobjectif "+fr(d.target)+" km":""}`;
   g+=`<rect class="hit" x="${x}" y="${m.t}" width="${bw}" height="${ih}" tabindex="0" data-tip="${esc(tipT)}"><title>${esc(tipT)}</title></rect>`});
- const rows=data.filter(d=>!d.future||d.target!=null).map(d=>`<tr class="${d.cur?"cur":""}"><td class="num">${dm(d.w)}${d.s?" · S"+d.s:""}</td><td class="r">${d.future?"—":fr(d.km)}</td><td class="r">${d.target!=null?fr(d.target):"—"}</td></tr>`).join("");
+ const rows=data.filter(d=>!d.future||d.target!=null).map(d=>`<tr class="${d.cur?"cur":""}"><td class="num">${dm(d.w)}${d.s?" · S"+d.s:""}</td><td class="r">${d.future?"—":fr(d.km)+(d.kmWod>0?`<br><span class="muted small">dont ${fr(d.kmWod)} WOD</span>`:"")}</td><td class="r">${d.target!=null?fr(d.target):"—"}</td></tr>`).join("");
  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Kilomètres de course par semaine depuis juillet">${g}</svg>
-  <div class="legend"><span><i style="background:var(--run)"></i>km de course réalisés</span><span><i style="background:var(--plate);height:3px"></i>objectif du programme</span></div>
+  <div class="legend"><span><i style="background:var(--run)"></i>course (sorties)</span><span><i style="background:var(--wod)"></i>course dans les WOD</span><span><i style="background:var(--plate);height:3px"></i>objectif du programme</span></div>
   <details><summary>Voir les chiffres</summary><div class="tablewrap"><table><thead><tr><th>Semaine</th><th class="r">Réalisé</th><th class="r">Objectif</th></tr></thead><tbody>${rows}</tbody></table></div></details>`}
 function efChart(){
  const P=((EF&&EF.points)||[]).slice().sort((a,b)=>a.d.localeCompare(b.d));
@@ -782,15 +801,15 @@ function pctPill(st,w){if(!st.started)return `<span class="pill">à venir</span>
  if(!st.ended)return `<span class="pill">${p} %</span>`;return `<span class="pill ${p>=80?"ok":p<50?"ko":"mid"}">${p} %</span>`}
 function renderCourse(){
  const A=acts();const S=WEEKS.map(w=>weekStat(w,A));
- const ok=i=>S[i].ended&&S[i].km/WEEKS[i].km>=0.8;
+ const ok=i=>S[i].ended&&S[i].kmRun/WEEKS[i].km>=0.8; // étapes : course pure (EF), pas les WOD
  const cond=[
-  ["S7 et S8 à 80 % ou plus","Lignes droites en S9 (déjà au programme)",S[1].ended?(ok(0)&&ok(1)?"ok":"ko"):null],
-  ["S7 → S10 à 80 % ou plus","3e run le lundi (25') dès S12, 1er tempo en S13 le 23/11",S[3].ended?([0,1,2,3].every(ok)?"ok":"ko"):null],
+  ["S7 et S8 à 80 % ou plus en course pure","Lignes droites en S9 (déjà au programme)",S[1].ended?(ok(0)&&ok(1)?"ok":"ko"):null],
+  ["S7 → S10 à 80 % ou plus en course pure","3e run le lundi (25') dès S12, 1er tempo en S13 le 23/11",S[3].ended?([0,1,2,3].every(ok)?"ok":"ko"):null],
   ["Une semaine sous 50 %","On ne baisse pas l'objectif suivant : on répète la semaine",null],
   ["Deux semaines de suite sous 50 %","Retour à 1 seul run et réécriture du format",null],
   ["Douleur tibiale qui persiste après l'échauffement","Stop course, vélo ou rameur, et on en reparle",null]];
  let h=`<div><span class="eyebrow">Course à pied</span><h1>Reconstruire la base</h1></div><div>${srcHTML()}</div>
- <div class="block"><h2>Volume hebdo</h2><p class="muted small">Km des sorties course sur Strava. La course HYROX et les portions courues en WOD ne comptent pas.</p>${volChart(A)}</div>
+ <div class="block"><h2>Volume hebdo</h2><p class="muted small">Km des sorties course sur Strava + km courus dans les WOD de box (lus dans la description de la séance sur Strava, corrigeables dans l'onglet Semaine). Les étapes de progression se jugent sur la course pure.</p>${volChart(A)}</div>
  <div class="block"><h2>Programme S7 → S12</h2><div class="tablewrap"><table><thead><tr><th>Sem.</th><th>Mercredi</th><th>Week-end</th><th class="r">Cible</th><th class="r">Fait</th></tr></thead><tbody>
  ${WEEKS.map((w,i)=>`<tr class="${TODAY>=w.start&&TODAY<=addD(w.start,6)?"cur":""}"><td><strong>S${w.s}</strong><br><span class="muted small num">${dm(w.start)}</span></td><td>${esc(w.mer.t)}</td><td>${esc((w.sam||w.dim).t)}${w.sam?" <span class='muted small'>(sam.)</span>":""}</td><td class="r">${fr(w.km)}</td><td class="r">${S[i].started?fr(S[i].km)+"<br>":""}${pctPill(S[i],w)}</td></tr>`).join("")}
  </tbody></table></div><p class="small muted">47,5 km sur 6 semaines, plus que les 7 semaines précédentes réunies (46,3 km). Zéro intensité jusqu'à S12.</p></div>
@@ -1195,7 +1214,7 @@ function renderSaved(){
 function renderAll(){renderSemaine();renderCourse();renderObjectif();renderSaved()}
 function bindApprove(){}
 show(VIEW);renderSalle();renderAll();
-fetch("data.json",{cache:"no-store"}).then(r=>r.json()).then(d=>{SNAP=d.strava||null;EF=d.ef||null;BOX=d.box||null;COACH=d.coach||null;MAJ=d.maj||null;PROG_SRV=Array.isArray(d.programme)?d.programme:[];KCACHE.clear();renderAll()}).catch(()=>renderAll());
+fetch("data.json",{cache:"no-store"}).then(r=>r.json()).then(d=>{SNAP=d.strava||null;EF=d.ef||null;BOX=d.box||null;COACH=d.coach||null;MAJ=d.maj||null;PROG_SRV=Array.isArray(d.programme)?d.programme:[];BOXKM_SRV=d.boxkm||{};KCACHE.clear();renderAll()}).catch(()=>renderAll());
 if("serviceWorker" in navigator){let reloaded=false;const had=!!navigator.serviceWorker.controller;
  navigator.serviceWorker.addEventListener("controllerchange",()=>{if(had&&!reloaded){reloaded=true;location.reload()}});
  addEventListener("load",()=>navigator.serviceWorker.register("sw.js").then(r=>r.update()).catch(()=>{}))}

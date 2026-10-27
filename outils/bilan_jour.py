@@ -23,14 +23,14 @@ RACINE = pathlib.Path(__file__).resolve().parent.parent
 JS = """(date)=>{
  const A=acts();
  const out={date,charge:charge(A,date),conseil_jour:conseil(date,A),conseil_demain:conseil(addD(date,1),A),
-  retours:A.filter(a=>a.d===date).map(a=>({nom:a.n,type:a.k,effort:a.re,retour:retourSeance(a,A)})),
+  retours:A.filter(a=>a.d===date).map(a=>({nom:a.n,type:a.k,effort:a.re,retour:retourSeance(a,A),...(kmWod(a)?{km_courus_wod:kmWod(a)}:{})})),
   jours_sans:Object.fromEntries(["run","box","muscu"].map(k=>[k,(x=>x?diff(x,date):null)(lastOf(k,A.filter(a=>a.d<=date)))]))};
  const w=WEEKS.find(w=>date>=w.start&&date<=addD(w.start,6));
  if(!w)return {...out,hors_programme:true};
  const d=effDays(w).find(x=>x.date===date),st=weekStat(w,A);
  return {...out,semaine:"S"+w.s+" · "+w.tag,
   prevu:d.items.filter(i=>i.k!=="repos").map(i=>({seance:i.t,type:i.k,fixe:!!i.lock,fait:doneOn(date,i.k,A,i)})),
-  semaine_course_km:Math.round(st.km*10)/10,semaine_objectif_km:w.km,
+  semaine_course_km:Math.round(st.km*10)/10,semaine_course_km_wod:Math.round(st.kmWod*10)/10,semaine_objectif_km:w.km,
   semaine_runs:st.runs,semaine_box:st.box,semaine_kine:st.kine,semaine_muscu:st.muscu};
 }"""
 

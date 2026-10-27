@@ -35,6 +35,8 @@ def nom(a):
 
 def salle(a):
     """Type de séance de salle lu dans le titre Strava (seul le type est gardé, pas le titre)."""
+    if (a.get("sport_type") or "") not in ("WeightTraining", "Workout"):
+        return None
     n = (a.get("name") or "").lower()
     if "push" in n:
         return "push"
@@ -43,6 +45,39 @@ def salle(a):
     if re.search(r"jambe|legs|squat|[ée]paule", n):
         return "legs"
     return None
+
+
+COURSE = re.compile(r"\brun\b|running|\bcourse\b|🏃", re.I)
+NAVETTE = re.compile(r"shuttle|navette", re.I)
+TOURS = re.compile(r"(\d+)\s*(?:rounds?|tours?|sets?|séries)\b", re.I)
+DIST = re.compile(r"(\d{1,2}[ \u202f\u00a0.]\d{3}(?!\d)|\d+(?:[.,]\d+)?)\s*(km|m)\b", re.I)
+FOIS = re.compile(r"(\d+)\s*[x×]\s*$", re.I)
+
+
+def km_wod(a):
+    """Km courus pendant une box / un WOD (demande de Jules, 27/10), lus dans la description (à défaut le titre).
+    Chaque ligne qui parle de course (run, course, 🏃) et donne une distance compte, multipliée par le nombre
+    de tours annoncé plus haut (« 3 tours », « 2 rounds », « × 2 sets ») ou sur la ligne (« 4 × 400 m run »).
+    Distances non fixées (shuttle run, navettes) ignorées. Rien de lisible : None (Jules corrige dans l'app)."""
+    if (a.get("sport_type") or "") not in ("HighIntensityIntervalTraining", "Crossfit"):
+        return None
+    texte = (a.get("description") or "").strip() or (a.get("name") or "")
+    total, tours = 0.0, 1
+    for ligne in texte.splitlines():
+        course = COURSE.search(ligne)
+        t = TOURS.search(ligne)
+        if t and not course:
+            tours = int(t.group(1))
+            continue
+        if not course or NAVETTE.search(ligne):
+            continue
+        for d in DIST.finditer(ligne):
+            v = float(re.sub(r"[ \u202f\u00a0.]", "", d.group(1)) if re.fullmatch(r"\d{1,2}[ \u202f\u00a0.]\d{3}", d.group(1)) else d.group(1).replace(",", "."))
+            km = v if d.group(2).lower() == "km" else v / 1000
+            f = FOIS.search(ligne[:d.start()])
+            total += km * (int(f.group(1)) if f else tours)
+    total = round(total, 1)
+    return total if 0 < total <= 15 else None
 
 
 def item(a):
@@ -55,6 +90,7 @@ def item(a):
         "min": round((s.get("moving_time") or 0) / 60, 1),
         "re": s.get("relative_effort"),
         "s": salle(a),
+        **({"kb": kb} if (kb := km_wod(a)) else {}),
     }
 
 
