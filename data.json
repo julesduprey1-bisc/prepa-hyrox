@@ -1,9 +1,54 @@
 {
- "maj": "2026-10-26T21:56",
+ "maj": "2026-10-27T21:56",
  "strava": {
-  "maj": "2026-10-26T21:56",
+  "maj": "2026-10-27T21:56",
   "source": "Strava list_activities, du 01/07 au 12/10/2026",
   "items": [
+   {
+    "id": "20754595953",
+    "n": "Kiné",
+    "t": "PhysicalTherapy",
+    "d": "2026-10-27",
+    "h": "19:06",
+    "km": 0.0,
+    "min": 8.1,
+    "re": 2,
+    "s": null
+   },
+   {
+    "id": "20754595947",
+    "n": "🔥 HYROX — FOR TIME | 3 ROUNDS",
+    "t": "HighIntensityIntervalTraining",
+    "d": "2026-10-27",
+    "h": "18:32",
+    "km": 0.0,
+    "min": 34.0,
+    "re": 112,
+    "s": null,
+    "kb": 2.4
+   },
+   {
+    "id": "20754595969",
+    "n": "Course à pied en soirée",
+    "t": "Run",
+    "d": "2026-10-27",
+    "h": "18:26",
+    "km": 0.34,
+    "min": 1.7,
+    "re": null,
+    "s": null
+   },
+   {
+    "id": "20753494547",
+    "n": "HIIT dans l'après-midi",
+    "t": "HighIntensityIntervalTraining",
+    "d": "2026-10-27",
+    "h": "17:38",
+    "km": 0.0,
+    "min": 1.6,
+    "re": 1,
+    "s": null
+   },
    {
     "id": "20738902646",
     "n": "Marche dans l'après-midi",
