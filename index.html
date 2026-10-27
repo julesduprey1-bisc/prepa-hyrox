@@ -235,6 +235,12 @@ button.set[aria-pressed="true"] .lbl{text-decoration:line-through}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chipbtn{min-height:40px;padding:0 12px;border-radius:999px;border:2px solid var(--line);background:var(--panel);cursor:pointer;font:600 15px var(--font-b)}
 .chipbtn.danger{border-color:var(--miss);color:var(--miss)}
+.chipbtn[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chipbtn:disabled{cursor:default}
+.addlink{align-self:flex-start}
+.tpl{display:flex;flex-direction:column}
+.tplrow{display:grid;grid-template-columns:44px 1fr;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:15px}
+.tplrow .d{font:600 13px var(--font-b);letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding-top:2px}
 .small-link{font-size:14px;color:var(--muted)}
 .pickrow{display:flex;align-items:center;gap:8px;margin:2px 0 8px}
 .pickrow select{flex:1;min-width:0;min-height:44px;border-radius:10px;border:2px solid var(--line);background:var(--panel);color:var(--ink);font:600 16px var(--font-b);padding:0 10px}
@@ -337,33 +343,85 @@ const WEEKS=[
  {s:12,tag:"Construction",km:10.0,mer:{t:"EF 35' + 6 lignes droites",min:35,ld:true},dim:{t:"EF 45'",min:45,long:true}}
 ].map((w,i)=>({...w,start:addD("2026-10-12",7*i)}));
 
-const KINE=()=>({k:"kine",t:"Kiné",id:"kine",lock:true});
-function daysOf(w){
+/* ================= Programme : semaine type et changements =================
+   Chaque séance récurrente a un identifiant stable (push, kine1, box1…) et un jour (0 = lundi).
+   Semaine type modifiable à partir d'une semaine donnée : versions gardées sur le téléphone (« prepa-programme »)
+   et, quand Claude les recopie, dans data.json (« programme ») pour le contrôle du soir.
+   Pour une semaine seulement : déplacer (même vers un jour passé), annuler, ajouter (« prepa-modifs »).
+   Clé d'une modification : « lundi de la semaine|séance » ; « lundi|+… » pour une séance ajoutée. */
+const SLOTS0=[
+ {id:"push",d:0,k:"muscu",salle:"push",t:"Push + abdos",sub:"+ tapis incliné 30' max",cut:1},
+ {id:"kine1",d:1,k:"kine",t:"Kiné",h:"10h30",lock:true},
+ {id:"box1",d:1,k:"box",t:"Box HYROX",lock:true},
+ {id:"pull",d:2,k:"muscu",salle:"pull",t:"Pull + abdos",cut:2},
+ {id:"run1",d:2,k:"run",src:"mer",lock:true},
+ {id:"kine2",d:3,k:"kine",t:"Kiné",h:"10h30",lock:true},
+ {id:"box2",d:3,k:"box",t:"Box HYROX",lock:true},
+ {id:"legs",d:4,k:"muscu",salle:"legs",t:"Jambes + épaules",cut:3},
+ {id:"run2",d:5,k:"run",src:"sam",lock:true},
+ {id:"run3",d:6,k:"run",src:"dim",lock:true,sub:"La plus longue de la semaine"}
+];
+const SLOT_NOM={run1:"EF de milieu de semaine",run2:"EF du samedi",run3:"EF longue du week-end"};
+const NOTE_SLOT={0:"push",1:"box1",2:"pull",3:"box2",4:"legs",5:"run2",6:"run3"}; // notes du programme : jour d'origine → séance
+const TYPES={kine:{l:"Kiné",it:{k:"kine",t:"Kiné",lock:true}},box:{l:"Box",it:{k:"box",t:"Box HYROX",lock:true}},ef:{l:"EF",it:{k:"run",t:"EF"}},
+ push:{l:"Push",it:{k:"muscu",salle:"push",t:"Push + abdos"}},pull:{l:"Pull",it:{k:"muscu",salle:"pull",t:"Pull + abdos"}},
+ legs:{l:"Jambes",it:{k:"muscu",salle:"legs",t:"Jambes + épaules"}},marche:{l:"Marche",it:{k:"marche",t:"Marche"}}};
+const RANK={kine:0,muscu:1,run:2,marche:3,box:4,repos:9};
+let MODS=ld("prepa-modifs",{}),EDIT=null,CONFIRM=null,ADD=null,ADD_REC=false;
+let PROG=ld("prepa-programme",[]),PROG_SRV=[];
+const KCACHE=new Map();
+/* 27/10 : anciennes clés « date|n° de la séance dans le jour » (kiné : « date|kine ») → « lundi|séance » */
+(function(){if(ld("prepa-modifs-v",1)>=2)return;
+ const OLD={0:["push"],1:["box1"],2:["pull","run1"],3:["box2"],4:["legs"],5:["run2"],6:["run3"]},N={};
+ for(const k in MODS){const [d,i]=k.split("|");if(!/^\d{4}-\d\d-\d\d$/.test(d||""))continue;
+  const ws=monday(d),wd=diff(ws,d),id=i==="kine"?(wd===1?"kine1":wd===3?"kine2":null):(OLD[wd]||[])[+i];
+  if(id)N[ws+"|"+id]=MODS[k]}
+ MODS=N;sv("prepa-modifs",MODS);sv("prepa-modifs-v",2)})();
+function versions(){const m=new Map();PROG_SRV.forEach(v=>m.set(v.from,v));PROG.forEach(v=>m.set(v.from,v));return [...m.values()].sort((a,b)=>a.from.localeCompare(b.from))}
+function slotsAt(ws){let v=null;for(const x of versions())if(x.from<=ws)v=x;return (v?v.slots:SLOTS0).map(s=>({...s}))}
+function slotName(s,w){if(s.src)return (w&&w[s.src]&&w[s.src].t)||SLOT_NOM[s.id]||"EF";return s.t}
+function keyedDays(w){
  const D=Array.from({length:7},(_,i)=>({date:addD(w.start,i),items:[]}));
- D[0].items.push({k:"muscu",salle:"push",t:"Push + abdos",sub:"+ tapis incliné 30' max",cut:1});
- D[1].items.push(KINE(),{k:"box",t:"Box HYROX",lock:true});
- D[2].items.push({k:"muscu",salle:"pull",t:"Pull + abdos",cut:2});
- D[2].items.push({k:"run",...w.mer,lock:true});
- D[3].items.push(KINE(),{k:"box",t:"Box HYROX",lock:true});
- D[4].items.push({k:"muscu",salle:"legs",t:"Jambes + épaules",cut:3});
- D[5].items.push(w.sam?{k:"run",...w.sam,lock:true}:{k:"repos",t:"Repos ou marche libre"});
- D[6].items.push(w.dim?{k:"run",...w.dim,lock:true,sub:"La plus longue de la semaine"}:{k:"repos",t:"Repos ou marche"});
- for(const i in (w.notes||{})){const it=D[i].items.find(x=>x.k!=="kine")||D[i].items[0];it.note=w.notes[i]}
- return D;
-}
-let MODS=ld("prepa-modifs",{}),EDIT=null,CONFIRM=null;
-function keyedDays(w){const base=daysOf(w);base.forEach(d=>{let n=0;d.items.forEach(it=>{it.key=d.date+"|"+(it.id||n++)})});return base}
-function effDays(w){
- const base=keyedDays(w);
- const D=base.map(d=>({date:d.date,items:[]}));
- base.forEach(d=>d.items.forEach(it=>{const m=MODS[it.key];
-  if(m&&m.s==="reporte"){const t=D.find(x=>x.date===m.to);if(t){t.items.push({...it,moved:d.date});return}}
-  D.find(x=>x.date===d.date).items.push(m&&m.s==="annule"?{...it,cancel:true}:it)}));
+ slotsAt(w.start).forEach(s=>{if(s.src&&!w[s.src])return;
+  const it={...s,...(s.src?w[s.src]:{}),k:s.k,id:s.id,key:w.start+"|"+s.id};delete it.d;delete it.src;D[s.d].items.push(it)});
+ for(const i in (w.notes||{})){const it=D.flatMap(x=>x.items).find(x=>x.id===NOTE_SLOT[i]);if(it)it.note=w.notes[i]}
+ D.forEach((d,i)=>{if(!d.items.length)d.items.push({k:"repos",t:i===6?"Repos ou marche":"Repos ou marche libre",key:w.start+"|repos"+i})});
  return D}
-function modLabel(key){const [d,i]=key.split("|");const w=WEEKS.find(w=>d>=w.start&&d<=addD(w.start,6));if(!w)return null;
- const it=keyedDays(w).flatMap(x=>x.items).find(x=>x.key===key);return it?it.t:null}
-function saveMods(){sv("prepa-modifs",MODS);writeNotif()}
-function notifLine(x){let s=x.t;if(x.k==="run")s+=" · FC 130–140, plafond 142";if(x.k==="box")s+=" (fixe)";if(x.k==="kine")s+=" · 10h30";if(x.moved)s+=` · reporté du ${dm(x.moved)}`;if(x.note)s+=" — "+x.note;return s}
+const daysOf=keyedDays;
+function effDays(w){
+ const base=keyedDays(w),D=base.map(d=>({date:d.date,items:[]})),at=x=>D.find(y=>y.date===x);
+ base.forEach(d=>d.items.forEach(it=>{const m=MODS[it.key];
+  if(m&&m.s==="reporte"&&m.to!==d.date&&at(m.to)){at(m.to).items.push({...it,moved:d.date});return}
+  at(d.date).items.push(m&&m.s==="annule"?{...it,cancel:true}:it)}));
+ for(const k in MODS){const m=MODS[k];if(m.s==="ajout"&&k.startsWith(w.start+"|+")&&at(m.date))at(m.date).items.push({...m.it,key:k,added:true})}
+ D.forEach(d=>{if(d.items.some(x=>x.k!=="repos"&&!x.cancel))d.items=d.items.filter(x=>x.k!=="repos");
+  d.items.sort((a,b)=>(RANK[a.k]??5)-(RANK[b.k]??5))});
+ return D}
+function weekOf(date){return WEEKS.find(w=>date>=w.start&&date<=addD(w.start,6))}
+function modInfo(key){const ws=key.split("|")[0],w=WEEKS.find(x=>x.start===ws),m=MODS[key];if(!w)return null;
+ if(m&&m.s==="ajout")return {t:m.it.t,date:m.date};
+ for(const d of keyedDays(w)){const it=d.items.find(x=>x.key===key);if(it)return {t:it.t,date:d.date}}
+ return null}
+function modLabel(key){const i=modInfo(key);return i?i.t:null}
+function saveMods(){sv("prepa-modifs",MODS);KCACHE.clear();writeNotif()}
+function saveProg(){sv("prepa-programme",PROG);KCACHE.clear();writeNotif()}
+/* Changement de semaine type à partir de la semaine « from », et pour toutes les suivantes */
+function editProg(from,fn){
+ PROG_SRV.forEach(v=>{if(v.from>=from&&!PROG.some(x=>x.from===v.from))PROG.push({from:v.from,slots:v.slots.map(s=>({...s}))})});
+ if(!PROG.some(v=>v.from===from))PROG.push({from,slots:slotsAt(from)});
+ PROG.forEach(v=>{if(v.from>=from){v.slots=fn(v.slots.map(s=>({...s})));v.le=TODAY}});
+ PROG.sort((a,b)=>a.from.localeCompare(b.from));saveProg()}
+function progDiff(slots){const o=new Map(SLOTS0.map(s=>[s.id,s])),out=[];
+ slots.forEach(s=>{const a=o.get(s.id);if(!a)out.push(`ajoutée : ${slotName(s)} le ${JOURSL[s.d]}`);else if(a.d!==s.d)out.push(`déplacée : ${slotName(s)} le ${JOURSL[s.d]} (au lieu du ${JOURSL[a.d]})`)});
+ SLOTS0.forEach(a=>{if(!slots.some(s=>s.id===a.id))out.push(`retirée : ${slotName(a)} du ${JOURSL[a.d]}`)});
+ return out}
+/* La montre enregistre la kiné en « Entraînement aux poids ». C'est la kiné si une kiné est prévue ce jour-là
+   (programme ou déplacement) et que la séance n'est pas titrée Push / Pull / Jambes ; si une séance de salle
+   est aussi prévue ce jour-là, seule celle du créneau 9h45–11h45 est la kiné. */
+function kineCtx(date){if(KCACHE.has(date))return KCACHE.get(date);let r={kine:false,salle:false};const w=weekOf(date);
+ if(w){const its=effDays(w).find(x=>x.date===date).items.filter(x=>!x.cancel);r={kine:its.some(x=>x.k==="kine"),salle:its.some(x=>x.k==="muscu")}}
+ KCACHE.set(date,r);return r}
+function notifLine(x){let s=x.t;if(x.k==="run")s+=" · FC 130–140, plafond 142";if(x.k==="box")s+=" (fixe)";if(x.k==="kine"&&x.h)s+=" · "+x.h;if(x.moved)s+=` · déplacée du ${dm(x.moved)}`;if(x.note)s+=" — "+x.note;return s}
 function writeNotif(){if(!("caches" in window))return;const map={};
  WEEKS.forEach(w=>effDays(w).forEach((d,i)=>{const its=d.items.filter(x=>!x.cancel&&x.k!=="repos");
   map[d.date]={title:`${JOURSL[i][0].toUpperCase()+JOURSL[i].slice(1)} ${dm(d.date)} · S${w.s}`,body:its.length?its.map(notifLine).join("\n"):"Repos ou marche libre."}}));
@@ -386,7 +444,9 @@ function kind(x){const t=x.t,n=x.n||"";
  if(t==="Run"||t==="TrailRun"||t==="VirtualRun"){if(/hyrox\s*race/i.test(n))return "course";if(/marche/i.test(n)||(x.min!=null&&x.min<10))return "marche";return "run"}
  if(t==="HighIntensityIntervalTraining"||t==="Crossfit")return "box";
  if(t==="PhysicalTherapy"||/kin[ée]/i.test(n))return "kine";
- if(t==="WeightTraining")return "muscu";
+ if(t==="WeightTraining"||t==="Workout"){
+  if(x.d&&!(x.s||typeSalle(n))){const c=kineCtx(x.d);if(c.kine&&(!c.salle||(x.h>="09:45"&&x.h<="11:45")))return "kine"}
+  if(t==="WeightTraining")return "muscu"}
  if(t==="Walk"||t==="Hike")return "marche";
  return "autre"}
 function acts(){const m=new Map();
@@ -500,8 +560,8 @@ let FORME=null,SYMPT=false,NOTE_DRAFT="",RESS_MSG="";
 function itemDetail(it){
  if(it.k==="run"){let s=EF_TXT;if(it.km)s+=` ≈ ${fr(it.km)} km.`;if(it.ld)s+=" "+LD_TXT;return s}
  if(it.k==="box")return "Verrouillé : on ne coupe jamais les deux box.";
- if(it.k==="kine")return "Rendez-vous fixe à 10h30. Lance ta montre pendant la séance pour qu'elle soit relevée sur Strava.";
- if(it.k==="muscu")return (it.sub?it.sub+". ":"")+"Coupe n°"+it.cut+" si la semaine déraille.";
+ if(it.k==="kine")return "Rendez-vous"+(it.h?" à "+it.h:"")+". Lance ta montre pendant la séance pour qu'elle soit relevée sur Strava.";
+ if(it.k==="muscu")return (it.sub?it.sub+". ":"")+(it.cut?"Coupe n°"+it.cut+" si la semaine déraille.":"");
  return "";
 }
 function statusOf(date,it,A){
@@ -514,17 +574,36 @@ function statusOf(date,it,A){
  return ["","À venir"];
 }
 function itemRow(d,it,isT,s,w){
- const chips=(it.moved?`<span class="chip moved">Reporté du ${dm(it.moved)}</span>`:"")+(it.k==="kine"?`<span class="chip lock">RDV</span>`:it.lock?`<span class="chip lock">Fixe</span>`:it.cut?`<span class="chip">Coupe ${it.cut}</span>`:"");
+ const chips=(it.moved?`<span class="chip moved">Déplacée du ${dm(it.moved)}</span>`:"")+(it.added?`<span class="chip moved">Ajoutée</span>`:"")+(it.k==="kine"?`<span class="chip lock">RDV</span>`:it.lock?`<span class="chip lock">Fixe</span>`:it.cut?`<span class="chip">Coupe ${it.cut}</span>`:"");
  let h=`<div class="it ${it.cancel?"cancel":""}"><div class="txt"><strong>${chips}${esc(it.t)}</strong>
-  ${it.note&&!it.cancel?`<span class="small">${esc(it.note)}</span>`:""}${it.k==="kine"&&!it.cancel?`<span class="muted small">10h30</span>`:""}${it.k==="run"&&!it.cancel?`<span class="muted small">${it.ld?"6 lignes droites · ":""}${it.ref?"Protocole de référence · ":""}FC 130–140</span>`:""}${s&&s[0]==="fait"?(re=>re?`<span class="muted small">Effort relatif ${re}</span>`:"")(acts().filter(a=>matchAct(a,d.date,it)).reduce((n,a)=>n+(+a.re||0),0)):""}
-  <span class="row" style="gap:14px">${it.salle&&!isT&&!it.cancel?`<button class="link" data-salle="${it.salle}">Checklist</button>`:""}${it.k!=="repos"&&!(s&&s[0]==="fait")?`<button class="link small-link" data-edit="${it.key}">${EDIT===it.key?"Fermer":"Reporter / annuler"}</button>`:""}</span></div>${s?`<span class="st ${s[0]}">${s[1]}</span>`:""}</div>`;
- if(EDIT===it.key){
-  const from=TODAY>w.start?TODAY:w.start,end=addD(w.start,6),opts=[];
-  for(let x=from;x<=end;x=addD(x,1))if(x!==d.date)opts.push(x);
-  h+=`<div class="edit">${opts.length?`<span class="small muted">Reporter à :</span><div class="chips">${opts.map(x=>`<button class="chipbtn" data-move="${it.key}" data-to="${x}">${JOURS[(parse(x).getDay()+6)%7]} ${dm(x)}</button>`).join("")}</div>`:`<span class="small muted">Plus de jour libre cette semaine pour la reporter.</span>`}
-   <div class="chips">${it.cancel?"":`<button class="chipbtn danger" data-cancel="${it.key}">Annuler la séance</button>`}${MODS[it.key]?`<button class="chipbtn" data-restore="${it.key}">Remettre comme prévu</button>`:""}</div>
-   ${CONFIRM===it.key?`<div class="alert warn">${it.k==="kine"?`<strong>Rendez-vous kiné</strong><p class="small">Si tu l'annules, recale-le avec ton kiné dans la semaine : il fait partie de la prépa.</p>`:`<strong>Séance fixe</strong><p class="small">Les deux box et les deux EF ne sautent jamais : reporte-la plutôt. L'objectif de la semaine reste le même.</p>`}<div><button class="chipbtn danger" data-cancelok="${it.key}">Annuler quand même</button></div></div>`:""}</div>`}
+  ${it.note&&!it.cancel?`<span class="small">${esc(it.note)}</span>`:""}${it.k==="kine"&&!it.cancel&&it.h?`<span class="muted small">${esc(it.h)}</span>`:""}${it.k==="run"&&!it.cancel?`<span class="muted small">${it.ld?"6 lignes droites · ":""}${it.ref?"Protocole de référence · ":""}FC 130–140</span>`:""}${s&&s[0]==="fait"?(re=>re?`<span class="muted small">Effort relatif ${re}</span>`:"")(acts().filter(a=>matchAct(a,d.date,it)).reduce((n,a)=>n+(+a.re||0),0)):""}
+  <span class="row" style="gap:14px">${it.salle&&!isT&&!it.cancel?`<button class="link" data-salle="${it.salle}">Checklist</button>`:""}${it.k!=="repos"?`<button class="link small-link" data-edit="${it.key}">${EDIT===it.key?"Fermer":"Modifier"}</button>`:""}</span></div>${s?`<span class="st ${s[0]}">${s[1]}</span>`:""}</div>`;
+ if(EDIT===it.key)h+=editPanel(d,it,w);
  return h}
+/* Modifier une séance : cette semaine (n'importe quel jour, même passé) ou chaque semaine (semaine type) */
+function editPanel(d,it,w){
+ const days=[];for(let i=0;i<7;i++){const x=addD(w.start,i);if(x!==d.date)days.push(x)}
+ const slot=it.added?null:slotsAt(w.start).find(x=>x.id===it.id),m=MODS[it.key];
+ let h=`<div class="edit"><span class="small muted">${it.added?"La déplacer au :":"Cette semaine, la déplacer au :"}</span>
+  <div class="chips">${days.map(x=>`<button class="chipbtn" data-move="${it.key}" data-to="${x}">${JOURS[diff(w.start,x)]} ${dm(x)}</button>`).join("")}</div>`;
+ if(slot)h+=`<span class="small muted">Chaque semaine, dès la S${w.s} :</span>
+  <div class="chips">${JOURS.map((j,i)=>`<button class="chipbtn" data-every="${it.id}" data-day="${i}" aria-pressed="${slot.d===i}"${slot.d===i?" disabled":""}>${j}</button>`).join("")}</div>`;
+ h+=`<div class="chips">${it.added?`<button class="chipbtn danger" data-del="${it.key}">Supprimer</button>`:(it.cancel?"":`<button class="chipbtn danger" data-cancel="${it.key}">Annuler cette semaine</button>`)}${slot?`<button class="chipbtn danger" data-unprog="${it.key}">Retirer du programme</button>`:""}${m&&!it.added?`<button class="chipbtn" data-restore="${it.key}">Remettre comme prévu</button>`:""}</div>`;
+ if(CONFIRM===it.key)h+=`<div class="alert warn">${it.k==="kine"?`<strong>Rendez-vous kiné</strong><p class="small">Si tu l'annules, recale-le avec ton kiné dans la semaine : il fait partie de la prépa.</p>`:`<strong>Séance fixe</strong><p class="small">Les box et les EF tiennent la prépa : déplace-la plutôt. L'objectif de la semaine reste le même.</p>`}<div><button class="chipbtn danger" data-cancelok="${it.key}">Annuler quand même</button></div></div>`;
+ if(CONFIRM==="rm|"+it.key)h+=`<div class="alert warn"><strong>Retirer du programme</strong><p class="small">« ${esc(it.t)} » disparaît de toutes les semaines à partir de la S${w.s}.${it.lock?" C'est une séance fixe de la prépa : seulement si le programme change vraiment.":""}</p><div><button class="chipbtn danger" data-unprogok="${it.key}">Retirer</button></div></div>`;
+ return h+`</div>`}
+function addPanel(w,date){const wd=diff(w.start,date);
+ return `<div class="edit"><span class="small muted">Ajouter ${JOURSL[wd]} ${dm(date)} :</span>
+  <div class="chips">${Object.entries(TYPES).map(([k,x])=>`<button class="chipbtn" data-addtype="${k}" data-date="${date}">${x.l}</button>`).join("")}</div>
+  <label class="check"><input type="checkbox" id="addrec"${ADD_REC?" checked":""}> Chaque ${JOURSL[wd]}, à partir de la S${w.s}</label></div>`}
+/* Semaine type de la semaine affichée (les changements valent pour elle et les suivantes) */
+function progBlock(w){const S=slotsAt(w.start),diffs=progDiff(S);
+ const rows=JOURS.map((j,i)=>{const its=S.filter(s=>s.d===i&&(!s.src||WEEKS.some(x=>x.start>=w.start&&x[s.src]))).sort((a,b)=>(RANK[a.k]??5)-(RANK[b.k]??5));
+  return `<div class="tplrow"><span class="d">${j}</span><span>${its.length?its.map(s=>esc(s.src?SLOT_NOM[s.id]:s.t)).join(" · "):`<span class="muted">Repos</span>`}</span></div>`}).join("");
+ return `<div class="block"><h3>Ma semaine type</h3>
+  <p class="muted small">Ce que l'app prévoit chaque semaine à partir de la S${w.s}. Pour la changer : « Modifier » sur une séance puis « Chaque semaine », ou « + Ajouter » sur un jour puis « Chaque… ». Un changement vaut pour la semaine affichée et les suivantes.</p>
+  <div class="tpl">${rows}</div>
+  ${diffs.length?`<div class="small"><strong>Par rapport au programme d'origine</strong><ul class="adjl">${diffs.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div><div><button class="chipbtn" id="progreset">Revenir au programme d'origine</button></div>`:""}</div>`}
 function renderSemaine(){
  const A=acts(),w=WEEKS[WI],D=effDays(w),st=weekStat(w,A),e=addD(w.start,6);
  const todayR=RESS.find(r=>r.date===TODAY);
@@ -542,24 +621,26 @@ function renderSemaine(){
  const td=D.find(d=>d.date===TODAY);
  if(td){h+=`<div class="block"><span class="eyebrow">Aujourd'hui</span>${adjHTML(conseil(TODAY,A),"Ajustement du jour")}<div class="todo">${td.items.map(it=>{const s=statusOf(TODAY,it,A);
    const ret=A.filter(a=>matchAct(a,TODAY,it)).map(a=>retourSeance(a,A)).filter(Boolean).join(" · ");
-   return `<div class="card k-${it.k}"><div class="row between"><h3>${it.moved?`<span class="chip moved">Reporté du ${dm(it.moved)}</span>`:""}${esc(it.t)}</h3>${s?`<span class="st ${s[0]}">${s[1]}</span>`:""}</div>
+   return `<div class="card k-${it.k}"><div class="row between"><h3>${it.moved?`<span class="chip moved">Déplacée du ${dm(it.moved)}</span>`:it.added?`<span class="chip moved">Ajoutée</span>`:""}${esc(it.t)}</h3>${s?`<span class="st ${s[0]}">${s[1]}</span>`:""}</div>
    ${it.note?`<p><strong>${esc(it.note)}</strong></p>`:""}${itemDetail(it)?`<p class="muted small">${esc(itemDetail(it))}</p>`:""}
    ${it.ref?`<ol class="proto">${REF_PROTO.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`:""}
    ${ret?`<p class="retour"><strong>Retour :</strong> ${esc(ret)}</p>`:""}
    ${it.salle?`<div><button class="btn" data-salle="${it.salle}">Ouvrir la checklist</button></div>`:""}</div>`}).join("")}</div></div>`;
   h+=chargeBlock(A)}
- // Tuiles
+ // Tuiles (objectifs = séances prévues cette semaine, changements compris)
+ const plan=D.flatMap(d=>d.items).filter(x=>!x.cancel),nb=k=>plan.filter(x=>x.k===k).length;
  h+=`<div class="tiles">
   <div class="tile wide"><span class="eyebrow">Course</span><b>${fr(st.km)}<small> / ${fr(w.km)} km</small></b><div class="meter"><span style="width:${pct}%"></span></div></div>
-  <div class="tile"><span class="eyebrow">EF</span><b>${st.runs}<small> / 2</small></b><span class="muted small">fixes</span></div>
-  <div class="tile"><span class="eyebrow">Box</span><b>${st.box}<small> / 2</small></b><span class="muted small">fixes</span></div>
-  <div class="tile"><span class="eyebrow">Kiné</span><b>${st.kine}<small> / 2</small></b><span class="muted small">RDV</span></div>
-  <div class="tile"><span class="eyebrow">Muscu</span><b>${st.muscu}<small> / 3</small></b><span class="muted small">ajustables</span></div></div>`;
+  <div class="tile"><span class="eyebrow">EF</span><b>${st.runs}<small> / ${nb("run")}</small></b><span class="muted small">fixes</span></div>
+  <div class="tile"><span class="eyebrow">Box</span><b>${st.box}<small> / ${nb("box")}</small></b><span class="muted small">fixes</span></div>
+  <div class="tile"><span class="eyebrow">Kiné</span><b>${st.kine}<small> / ${nb("kine")}</small></b><span class="muted small">RDV</span></div>
+  <div class="tile"><span class="eyebrow">Muscu</span><b>${st.muscu}<small> / ${nb("muscu")}</small></b><span class="muted small">ajustables</span></div></div>`;
  // Jours
  h+=`<div class="block" style="gap:0">${D.map((d,i)=>{const isT=d.date===TODAY;
    return `<div class="day ${isT?"today":""}"><div class="d">${JOURS[i]}<small class="num">${dm(d.date)}</small></div><div class="items">${d.items.length?"":`<span class="muted small">Rien de prévu</span>`}${d.items.map(it=>{const s=statusOf(d.date,it,A);
-     return itemRow(d,it,isT,s,w)}).join("")}</div></div>`}).join("")}</div>`;
- h+=`<p class="small muted">Si la semaine déraille, on coupe par le bas : Push du lundi, puis Pull, puis jambes. Les deux box et les deux EF ne sautent jamais.</p>`;
+     return itemRow(d,it,isT,s,w)}).join("")}<button class="link small-link addlink" data-add="${d.date}">${ADD===d.date?"Fermer":"+ Ajouter"}</button>${ADD===d.date?addPanel(w,d.date):""}</div></div>`}).join("")}</div>`;
+ h+=`<p class="small muted">Si la semaine déraille, on coupe par le bas : Push, puis Pull, puis jambes. Les box et les EF ne sautent pas : on les déplace.</p>`;
+ h+=progBlock(w);
  // Compteurs
  const C=[["Dernier run","run",7,4],["Dernière box","box",6,4],["Dernière muscu","muscu",7,4]].map(([l,k,bad,warn])=>{const d=lastOf(k,A);const n=d?diff(d,TODAY):null;
   const c=n==null?"":n>=bad?"miss":n>=warn?"warn":"ok";
@@ -574,8 +655,8 @@ function renderSemaine(){
   <textarea id="rnote" placeholder="Sommeil, douleurs, fatigue…">${esc(NOTE_DRAFT||(todayR&&FORME==null?todayR.note||"":""))}</textarea>
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
- h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis et séances reportées ou annulées des 7 derniers jours, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 19 · 25/10</p>`;
+ h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis, séances déplacées, annulées ou ajoutées des 7 derniers jours et ta semaine type, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
+ h+=`<p class="small muted" style="text-align:center">Version 20 · 27/10</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -585,8 +666,24 @@ function renderSemaine(){
  $("#rsave").onclick=saveRessenti;
  $("#sendc").onclick=shareCoach;
  bindTips(el);
- el.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>{EDIT=EDIT===b.dataset.edit?null:b.dataset.edit;CONFIRM=null;renderSemaine()});
- el.querySelectorAll("[data-move]").forEach(b=>b.onclick=()=>{MODS[b.dataset.move]={s:"reporte",to:b.dataset.to,le:TODAY};EDIT=null;CONFIRM=null;saveMods();renderSemaine()});
+ el.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>{EDIT=EDIT===b.dataset.edit?null:b.dataset.edit;CONFIRM=null;ADD=null;renderSemaine()});
+ el.querySelectorAll("[data-move]").forEach(b=>b.onclick=()=>{const k=b.dataset.move,to=b.dataset.to,m=MODS[k];
+  if(m&&m.s==="ajout")m.date=to;else{const i=modInfo(k);if(i&&i.date===to)delete MODS[k];else MODS[k]={s:"reporte",to,le:TODAY}}
+  EDIT=null;CONFIRM=null;saveMods();renderSemaine()});
+ el.querySelectorAll("[data-every]").forEach(b=>b.onclick=()=>{const id=b.dataset.every,day=+b.dataset.day,k=w.start+"|"+id;
+  editProg(w.start,sl=>sl.map(x=>x.id===id?{...x,d:day}:x));if(MODS[k]&&MODS[k].s==="reporte"){delete MODS[k];saveMods()}
+  EDIT=null;CONFIRM=null;renderSemaine()});
+ el.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{delete MODS[b.dataset.del];EDIT=null;CONFIRM=null;saveMods();renderSemaine()});
+ el.querySelectorAll("[data-unprog]").forEach(b=>b.onclick=()=>{CONFIRM="rm|"+b.dataset.unprog;renderSemaine()});
+ el.querySelectorAll("[data-unprogok]").forEach(b=>b.onclick=()=>{const k=b.dataset.unprogok,id=k.split("|")[1];
+  editProg(w.start,sl=>sl.filter(x=>x.id!==id));if(MODS[k]){delete MODS[k];saveMods()}EDIT=null;CONFIRM=null;renderSemaine()});
+ el.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{ADD=ADD===b.dataset.add?null:b.dataset.add;ADD_REC=false;EDIT=null;CONFIRM=null;renderSemaine()});
+ const ar=$("#addrec");if(ar)ar.onchange=e=>{ADD_REC=e.target.checked};
+ el.querySelectorAll("[data-addtype]").forEach(b=>b.onclick=()=>{const ty=TYPES[b.dataset.addtype],date=b.dataset.date,uid=Date.now().toString(36);
+  if(ADD_REC)editProg(w.start,sl=>[...sl,{id:"x"+uid,d:diff(w.start,date),...ty.it}]);
+  else{MODS[w.start+"|+"+uid]={s:"ajout",date,it:{...ty.it},le:TODAY};saveMods()}
+  ADD=null;ADD_REC=false;renderSemaine()});
+ const pr=$("#progreset");if(pr)pr.onclick=()=>{editProg(w.start,()=>SLOTS0.map(x=>({...x})));renderSemaine()};
  el.querySelectorAll("[data-cancel]").forEach(b=>b.onclick=()=>{const k=b.dataset.cancel;const it=effDays(w).flatMap(x=>x.items).find(x=>x.key===k);
   if(it&&it.lock&&CONFIRM!==k){CONFIRM=k;renderSemaine();return}MODS[k]={s:"annule",le:TODAY};EDIT=null;CONFIRM=null;saveMods();renderSemaine()});
  el.querySelectorAll("[data-cancelok]").forEach(b=>b.onclick=()=>{MODS[b.dataset.cancelok]={s:"annule",le:TODAY};EDIT=null;CONFIRM=null;saveMods();renderSemaine()});
@@ -630,8 +727,11 @@ function coachText(){const from=addD(TODAY,-6);
  const se=SEANCES.filter(s=>s.date>=from).slice().reverse(),re=RESS.filter(r=>r.date>=from).slice().reverse();
  let t=`Prépa HYROX — mes saisies du ${dm(from)} au ${dm(TODAY)}\n`;
  t+="\nSéances salle :\n"+(se.length?se.map(s=>`- ${dm(s.date)} ${s.titre}\n`+(s.lignes||[]).map(l=>"   "+l).join("\n")).join("\n"):"- aucune");
- const mo=Object.entries(MODS).filter(([k])=>k.split("|")[0]>=from).sort().map(([k,m])=>{const t=modLabel(k);return t?`- ${t} du ${dm(k.split("|")[0])} : ${m.s==="annule"?"annulée":"reportée au "+dm(m.to)}`:null}).filter(Boolean);
- t+="\n\nSéances reportées / annulées :\n"+(mo.length?mo.join("\n"):"- aucune");
+ const mo=Object.entries(MODS).filter(([k])=>k.split("|")[0]>=monday(from)).map(([k,m])=>{const i=modInfo(k);if(!i)return null;
+  return [i.date,m.s==="ajout"?`- ${i.t} ajoutée le ${dm(m.date)}`:m.s==="annule"?`- ${i.t} du ${dm(i.date)} : annulée`:`- ${i.t} du ${dm(i.date)} : déplacée au ${dm(m.to)}`]}).filter(Boolean).sort().map(x=>x[1]);
+ t+="\n\nSéances déplacées / annulées / ajoutées :\n"+(mo.length?mo.join("\n"):"- aucune");
+ const pv=PROG.map(v=>{const x=progDiff(v.slots);return `- à partir du ${dm(v.from)} : ${x.length?x.join(" ; "):"programme d'origine"}`});
+ if(pv.length)t+="\n\nSemaine type modifiée :\n"+pv.join("\n");
  t+="\n\nRessenti :\n"+(re.length?re.map(r=>`- ${dm(r.date)} forme ${r.forme}/5${r.symptomes?" · symptômes":""}${r.note?" · "+r.note:""}`).join("\n"):"- aucun");
  return t}
 async function shareCoach(){const t=coachText(),m=$("#sendmsg");
@@ -1095,7 +1195,7 @@ function renderSaved(){
 function renderAll(){renderSemaine();renderCourse();renderObjectif();renderSaved()}
 function bindApprove(){}
 show(VIEW);renderSalle();renderAll();
-fetch("data.json",{cache:"no-store"}).then(r=>r.json()).then(d=>{SNAP=d.strava||null;EF=d.ef||null;BOX=d.box||null;COACH=d.coach||null;MAJ=d.maj||null;renderAll()}).catch(()=>renderAll());
+fetch("data.json",{cache:"no-store"}).then(r=>r.json()).then(d=>{SNAP=d.strava||null;EF=d.ef||null;BOX=d.box||null;COACH=d.coach||null;MAJ=d.maj||null;PROG_SRV=Array.isArray(d.programme)?d.programme:[];KCACHE.clear();renderAll()}).catch(()=>renderAll());
 if("serviceWorker" in navigator){let reloaded=false;const had=!!navigator.serviceWorker.controller;
  navigator.serviceWorker.addEventListener("controllerchange",()=>{if(had&&!reloaded){reloaded=true;location.reload()}});
  addEventListener("load",()=>navigator.serviceWorker.register("sw.js").then(r=>r.update()).catch(()=>{}))}

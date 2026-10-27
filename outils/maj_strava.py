@@ -2,8 +2,10 @@
 
 Usage : python3 outils/maj_strava.py --depuis AAAA-MM-JJ page1.json [page2.json …]
 
-Les séances « poids » du mardi et du jeudi entre 9h45 et 11h45 sont la kiné
-(tous les mardis et jeudis à 10h30) : renommées « Kiné », elles ne comptent pas en muscu.
+La kiné (enregistrée par la montre en « Entraînement aux poids ») est reconnue par
+l'app d'après le programme réel du jour, déplacements compris (depuis le 27/10) :
+le script ne renomme plus les séances du mardi et du jeudi matin. Une activité
+renommée « Kiné » sur Strava est reprise comme telle.
 
 --depuis est la date de début de la requête Strava : une activité de data.json
 datée de ce jour ou après, absente des réponses, a été supprimée sur Strava et
@@ -41,15 +43,6 @@ def salle(a):
     if re.search(r"jambe|legs|squat|[ée]paule", n):
         return "legs"
     return None
-
-
-def kine_du_matin(x):
-    """Kiné tous les mardis et jeudis à 10h30 (Jules, 14/10) : la montre l'enregistre en « poids ».
-    Une séance titrée Push / Pull / Jambes sur Strava reste de la muscu (Push du jeudi 15/10 à 10h36)."""
-    if x["t"] not in ("WeightTraining", "Workout") or not x["d"] or x.get("s"):
-        return False
-    jour = datetime.date.fromisoformat(x["d"]).weekday()  # 1 = mardi, 3 = jeudi
-    return jour in (1, 3) and "09:45" <= x["h"] <= "11:45"
 
 
 def item(a):
@@ -94,9 +87,6 @@ def main():
                 x["n"] = ancien
         fusion[i] = x
 
-    for x in fusion.values():
-        if kine_du_matin(x):
-            x["n"] = "Kiné"
     items = sorted(fusion.values(), key=lambda x: (x["d"], x["h"]), reverse=True)
     maj = datetime.datetime.now(zoneinfo.ZoneInfo("Europe/Paris")).strftime("%Y-%m-%dT%H:%M")
     data["strava"]["items"] = items
