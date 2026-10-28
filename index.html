@@ -223,6 +223,8 @@ button.set[aria-pressed="true"] .lbl{text-decoration:line-through}
 .step{display:flex;align-items:center;border:2px solid var(--line);border-radius:10px;overflow:hidden;flex:0 0 auto}
 .step button{width:40px;min-height:46px;border:none;background:transparent;color:var(--ink);font:600 22px var(--font-b);cursor:pointer}
 .step span{min-width:64px;text-align:center;font:600 17px var(--font-b)}
+.step .edit-kg{cursor:text;text-decoration:underline dotted var(--muted);text-underline-offset:4px}
+.step .edit-kg input{width:64px;min-height:40px;border:none;border-radius:6px;background:var(--soft);color:var(--ink);text-align:center;font:600 17px var(--font-b);padding:0}
 .recap{background:var(--panel);border-radius:14px;padding:16px;border-left:6px solid var(--done);display:flex;flex-direction:column;gap:10px}
 .recap pre{white-space:pre-wrap;font:400 15px/1.5 var(--font-b);margin:0}
 .addwrap{display:flex}
@@ -751,7 +753,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis, séances déplacées, annulées ou ajoutées des 7 derniers jours et ta semaine type, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 34 · 28/10</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 35 · 28/10</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -961,13 +963,13 @@ const CAT={
  "pecs":[
   X("couche-barre","Développé couché barre","Poids total, barre comprise. Omoplates serrées, pieds au sol.",[L("",5)],[60],8),
   X("chest-press","Chest press machine","Chiffre affiché sur la machine.",[L("",5)],[50],10),
-  X("decline-halteres","Développé décliné haltères","Charge par haltère. Bas des pecs.",[L("",2)],[26],10),
+  X("decline-halteres","Développé décliné haltères","Charge par haltère. Bas des pecs.",[L("",0.5)],[26],10),
   X("pompes-lestees","Pompes lestées","Disque sur le dos : charge du disque. Corps gainé.",[L("",5)],[10],12)],
  "pecs-finisher":[
-  X("ss-ecartes-pompes","Superset écartés + pompes","Sans repos entre les deux. Écartés haltères (charge par haltère), puis pompes au poids du corps jusqu'à 2 reps de l'échec. Reps = écartés.",[L("Écartés",2)],[12],10),
-  X("ss-pecdeck-presse","Superset pec deck + presse serrée","Sans repos entre les deux. Pec deck : chiffre de la machine. Presse serrée : haltère ou disque serré entre les paumes. Reps = pour chacun.",[L("Pec deck",5),L("Presse",2)],[40,10],10),
-  X("ecartes-halteres","Écartés haltères","Charge par haltère. Coudes légèrement fléchis, les coudes ne passent pas sous le niveau du banc.",[L("",2)],[12],12),
-  X("presse-serree","Presse serrée (Svend press)","Debout, haltère ou disque serré entre les paumes, bras tendus devant, 1 s bras tendus. Le serrage compte plus que le poids.",[L("",2)],[12],12)],
+  X("ss-ecartes-pompes","Superset écartés + pompes","Sans repos entre les deux. Écartés haltères (charge par haltère), puis pompes au poids du corps jusqu'à 2 reps de l'échec. Reps = écartés.",[L("Écartés",0.5)],[12],10),
+  X("ss-pecdeck-presse","Superset pec deck + presse serrée","Sans repos entre les deux. Pec deck : chiffre de la machine. Presse serrée : haltère ou disque serré entre les paumes. Reps = pour chacun.",[L("Pec deck",5),L("Presse",0.5)],[40,10],10),
+  X("ecartes-halteres","Écartés haltères","Charge par haltère. Coudes légèrement fléchis, les coudes ne passent pas sous le niveau du banc.",[L("",0.5)],[12],12),
+  X("presse-serree","Presse serrée (Svend press)","Debout, haltère ou disque serré entre les paumes, bras tendus devant, 1 s bras tendus. Le serrage compte plus que le poids.",[L("",0.5)],[12],12)],
  "dips":[
   X("dips-lestes","Dips lestés","Charge de la ceinture. Buste penché en avant.",[L("",2.5)],[5],6),
   X("dips-assistes","Dips assistés machine","Chiffre d'assistance : plus il est bas, plus c'est dur.",[L("Assist.",5)],[30],8),
@@ -975,19 +977,19 @@ const CAT={
   X("dips-banc","Dips entre deux bancs","Poids du corps, pieds sur un banc. Ne descends pas sous l'horizontale des bras.",[],[],12)],
  "pecs-iso":[
   X("pec-deck","Pec deck (butterfly)","Chiffre affiché sur la machine. 1 s de contraction.",[L("",5)],[40],12),
-  X("ecartes-plat","Écartés haltères banc plat","Charge par haltère. Coudes légèrement fléchis.",[L("",2)],[12],12)],
+  X("ecartes-plat","Écartés haltères banc plat","Charge par haltère. Coudes légèrement fléchis.",[L("",0.5)],[12],12)],
  "pecs-haut-iso":[
-  X("ecartes-incline","Écartés incliné haltères","Banc à 30°, charge par haltère, coudes légèrement fléchis.",[L("",2)],[10],12),
+  X("ecartes-incline","Écartés incliné haltères","Banc à 30°, charge par haltère, coudes légèrement fléchis.",[L("",0.5)],[10],12),
   X("pec-deck-bas","Pec deck poignées basses","Siège haut, poignées sous les épaules : haut des pecs. Chiffre de la machine.",[L("",5)],[35],12),
   X("landmine","Développé landmine","Barre calée dans un coin, poussée à une main en diagonale : haut des pecs, épaule protégée. Charge des disques, reps par bras.",[L("",2.5)],[10],10)],
  "pecs-bas-iso":[
-  X("ecartes-decline","Écartés décliné haltères","Banc décliné, charge par haltère.",[L("",2)],[10],12),
+  X("ecartes-decline","Écartés décliné haltères","Banc décliné, charge par haltère.",[L("",0.5)],[10],12),
   X("dips-penche","Dips buste penché","Poids du corps, buste très penché : bas des pecs.",[],[],10),
   X("decline-machine","Chest press déclinée machine","Chiffre de la machine : bas des pecs.",[L("",5)],[40],10)],
  "triceps":[
   X("corde","Extension corde poulie haute","Chiffre de la colonne. Coudes fixes, écarte la corde en bas.",[L("",2.5)],[20],12),
   X("barre-front","Barre au front","Poids total, barre EZ comprise. Coudes fixes.",[L("",2.5)],[20],10),
-  X("extension-nuque","Extension nuque haltère","Un haltère à deux mains derrière la tête, coudes serrés.",[L("",2)],[16],12),
+  X("extension-nuque","Extension nuque haltère","Un haltère à deux mains derrière la tête, coudes serrés.",[L("",0.5)],[16],12),
   X("kickback","Kickback poulie","Buste penché, bras collé au corps, tends le bras vers l'arrière. Reps par bras.",[L("",2.5)],[5],12),
   X("ss-corde-front","Superset corde + barre au front","Sans repos entre les deux. Corde : chiffre de la colonne. Barre : poids total, EZ comprise.",[L("Corde",2.5),L("Barre",2.5)],[20,15],12)],
  "cardio":[
@@ -1005,29 +1007,29 @@ const CAT={
   X("tbar","Rowing T-bar","Charge des disques. Buste à 45°, dos neutre.",[L("",5)],[30],10),
   X("rowing-machine","Rowing machine appui poitrine","Chiffre affiché. L'appui poitrine soulage le bas du dos.",[L("",5)],[50],10),
   X("tirage-horizontal","Tirage horizontal poulie","Chiffre de la colonne. Buste droit, tire vers le nombril.",[L("",5)],[55],10),
-  X("rowing-incline","Rowing haltères banc incliné","Allongé face au banc à 30° : rien sur le bas du dos. Charge par haltère.",[L("",2)],[24],10)],
+  X("rowing-incline","Rowing haltères banc incliné","Allongé face au banc à 30° : rien sur le bas du dos. Charge par haltère.",[L("",0.5)],[24],10)],
  "dos-largeur":[
   X("tractions","Tractions","Poids du corps (ou élastique). Amplitude complète, règle tes reps.",[],[],6),
   X("tirage-vertical","Tirage vertical","Chiffre de la colonne, prise large, tire vers le haut de la poitrine.",[L("",5)],[55],10),
   X("tirage-serre","Tirage vertical prise serrée","Poignée triangle, coudes le long du corps.",[L("",5)],[55],10),
   X("pullover","Pull-over poulie","Bras presque tendus, ramène la barre jusqu'aux cuisses.",[L("",2.5)],[20],12)],
  "dos-unilat":[
-  X("bucheron-genou","Rowing bûcheron genou sur le banc","Poids d’un haltère. Un genou et une main sur le banc, l'autre pied au sol : le banc soutient le bas du dos. Reps par bras.",[L("",2)],[30],10),
+  X("bucheron-genou","Rowing bûcheron genou sur le banc","Poids d’un haltère. Un genou et une main sur le banc, l'autre pied au sol : le banc soutient le bas du dos. Reps par bras.",[L("",0.5)],[30],10),
   X("rowing-poulie-unilat","Rowing poulie unilatéral","Chiffre de la colonne, reps par bras.",[L("",2.5)],[20],12),
   X("meadows","Meadows row","Barre calée dans un coin, prise d'un côté. Charge des disques, reps par bras.",[L("",2.5)],[20],10)],
  "grip":[
-  X("farmer-hold","Farmer hold","Debout avec deux haltères lourds, le plus longtemps possible. Charge par haltère.",[L("",2)],[32],45,SEC),
+  X("farmer-hold","Farmer hold","Debout avec deux haltères lourds, le plus longtemps possible. Charge par haltère.",[L("",0.5)],[32],45,SEC),
   X("serviette","Suspension serviette","Une serviette sur la barre dans chaque main : le grip du sled pull.",[],[],30,SEC),
   X("pinch","Pinch disques","Deux disques lisses pincés entre les doigts, bras le long du corps.",[L("",5)],[20],30,SEC)],
  "biceps":[
   X("curl-ez","Curl barre EZ","Poids total, barre comprise. Coudes fixes.",[L("",2.5)],[25],10),
-  X("curl-alterne","Curl haltères alterné","Charge par haltère, reps par bras, zéro élan.",[L("",2)],[14],10),
-  X("curl-marteau","Curl marteau","Prise neutre, charge par haltère : biceps et avant-bras.",[L("",2)],[14],10),
-  X("curl-incline","Curl incliné haltères","Banc à 45°, bras derrière le buste : étirement du biceps.",[L("",2)],[10],10),
+  X("curl-alterne","Curl haltères alterné","Charge par haltère, reps par bras, zéro élan.",[L("",0.5)],[14],10),
+  X("curl-marteau","Curl marteau","Prise neutre, charge par haltère : biceps et avant-bras.",[L("",0.5)],[14],10),
+  X("curl-incline","Curl incliné haltères","Banc à 45°, bras derrière le buste : étirement du biceps.",[L("",0.5)],[10],10),
   X("curl-machine","Curl biceps machine","Chiffre de la machine, coudes calés, descente lente.",[L("",2.5)],[25],10),
   X("curl-poulie-basse","Curl poulie basse barre","Chiffre de la colonne, coudes fixes.",[L("",2.5)],[20],10)],
  "biceps-iso":[
-  X("curl-concentre","Curl concentré","Assis, coude contre la cuisse, reps par bras.",[L("",2)],[10],12),
+  X("curl-concentre","Curl concentré","Assis, coude contre la cuisse, reps par bras.",[L("",0.5)],[10],12),
   X("curl-pupitre","Curl pupitre machine","Chiffre de la machine, descente lente.",[L("",2.5)],[20],12),
   X("curl-poulie-barre","Curl poulie barre","Chiffre de la colonne, coudes fixes.",[L("",2.5)],[20],12),
   X("marteau-corde","Curl marteau corde","Poulie basse, corde, prise neutre.",[L("",2.5)],[20],12)],
@@ -1041,15 +1043,15 @@ const CAT={
   X("squat","Squat","Poids total, barre comprise. Commence léger, stop si le bas du dos tire.",[L("",5)],[60],8),
   X("presse","Presse à cuisses","Disques chargés uniquement, sans le chariot. Genoux dans l'axe.",[L("",10)],[120],12),
   X("front-squat","Front squat","Barre devant, coudes hauts, buste droit : moins de charge sur le dos.",[L("",5)],[40],8),
-  X("goblet","Squat goblet","Un haltère contre la poitrine, charge de l'haltère.",[L("",2)],[24],12),
+  X("goblet","Squat goblet","Un haltère contre la poitrine, charge de l'haltère.",[L("",0.5)],[24],12),
   X("hack","Hack squat","Charge des disques ajoutés.",[L("",10)],[40],10),
-  X("bulgare","Squat bulgare","Pied arrière sur un banc, charge par haltère, reps par jambe.",[L("",2)],[12],10)],
+  X("bulgare","Squat bulgare","Pied arrière sur un banc, charge par haltère, reps par jambe.",[L("",0.5)],[12],10)],
  "fentes":[
-  X("fentes-arriere","Fentes arrière","Charge par haltère, reps par jambe : moins de contrainte sur le genou.",[L("",2)],[14],10),
+  X("fentes-arriere","Fentes arrière","Charge par haltère, reps par jambe : moins de contrainte sur le genou.",[L("",0.5)],[14],10),
   X("fentes-sandbag","Fentes sandbag","Sac sur les épaules, comme en HYROX. Reps = nombre de pas.",[L("",5)],[20],20),
-  X("step-up","Step-up","Banc à hauteur de genou, charge par haltère, reps par jambe.",[L("",2)],[12],10),
+  X("step-up","Step-up","Banc à hauteur de genou, charge par haltère, reps par jambe.",[L("",0.5)],[12],10),
   X("fentes-smith","Fentes à la Smith","Barre guidée sur les épaules, charge ajoutée, reps par jambe.",[L("",5)],[20],10),
-  X("bulgare","Squat bulgare","Pied arrière sur un banc, charge par haltère, reps par jambe.",[L("",2)],[12],10)],
+  X("bulgare","Squat bulgare","Pied arrière sur un banc, charge par haltère, reps par jambe.",[L("",0.5)],[12],10)],
  "ischios":[
   X("rdl","Soulevé de terre roumain","Poids total (barre ou haltères). Dos neutre, descends jusqu'aux genoux, poussée de hanches.",[L("",5)],[50],10),
   X("leg-curl-unilat","Leg curl unilatéral","Chiffre de la machine, reps par jambe.",[L("",2.5)],[20],12),
@@ -1059,13 +1061,13 @@ const CAT={
   X("adducteurs-poulie","Adducteurs poulie","Sangle à la cheville, chiffre de la colonne, reps par jambe.",[L("",2.5)],[10],12),
   X("abducteurs","Abducteurs machine","Chiffre de la machine : moyen fessier, stabilité du genou.",[L("",5)],[40],15)],
  "epaules":[
-  X("dev-halteres","Développé haltères assis","Charge par haltère, dossier droit.",[L("",2)],[18],10),
-  X("arnold","Arnold press","Charge par haltère, rotation des paumes pendant la montée.",[L("",2)],[14],10),
+  X("dev-halteres","Développé haltères assis","Charge par haltère, dossier droit.",[L("",0.5)],[18],10),
+  X("arnold","Arnold press","Charge par haltère, rotation des paumes pendant la montée.",[L("",0.5)],[14],10),
   X("dev-machine","Développé épaules machine","Chiffre de la machine.",[L("",5)],[30],10),
   X("push-press-technogym","Push press machine Technogym","Machine à disques : charge = disques chargés sur chaque bras. Une série = 10 bras droit, 10 bras gauche, puis 10 à deux bras (reps au total). Dos collé au dossier, poignées à hauteur d'épaules.",[L("",2.5)],[10],30),
-  X("laterales","Élévations latérales","Charge par haltère, coudes légèrement fléchis, jusqu'à hauteur d'épaules.",[L("",1)],[8],15),
-  X("laterales-degressif","Élévations latérales dégressives","Charge par haltère : 10 reps à chaque charge, les trois à la suite sans repos (ex. 8, 6 puis 4 kg). Reps = 10 à chaque charge.",[L("",2),L("",2),L("",2)],[8,6,4],10),
-  X("oiseau","Oiseau (arrière d'épaule)","Buste penché, charge par haltère.",[L("",1)],[6],15),
+  X("laterales","Élévations latérales","Charge par haltère, coudes légèrement fléchis, jusqu'à hauteur d'épaules.",[L("",0.5)],[8],15),
+  X("laterales-degressif","Élévations latérales dégressives","Charge par haltère : 10 reps à chaque charge, les trois à la suite sans repos (ex. 8, 6 puis 4 kg). Reps = 10 à chaque charge.",[L("",0.5),L("",0.5),L("",0.5)],[8,6,4],10),
+  X("oiseau","Oiseau (arrière d'épaule)","Buste penché, charge par haltère.",[L("",0.5)],[6],15),
   X("landmine-epaule","Landmine press","Barre calée dans un coin, une main, reps par bras.",[L("",2.5)],[10],10),
   X("laterales-poulie","Élévations latérales poulie","Poulie basse du côté opposé, reps par bras.",[L("",2.5)],[5],15),
   X("oiseau-machine","Oiseau machine (pec deck inversé)","Chiffre de la machine : arrière d'épaule.",[L("",5)],[30],15)],
@@ -1076,11 +1078,11 @@ const CAT={
   X("releveurs","Releveurs de pieds","Dos au mur, talons au sol, remonte les pointes de pieds : pour les tibias.",[],[],20)],
  "overhead":[
   X("ohs-baton","Squat overhead bâton","Avec un bâton : mobilité et technique pure.",[],[],10),
-  X("goblet","Squat goblet","Un haltère contre la poitrine, charge de l'haltère.",[L("",2)],[24],12),
+  X("goblet","Squat goblet","Un haltère contre la poitrine, charge de l'haltère.",[L("",0.5)],[24],12),
   X("front-squat","Front squat","Barre devant, coudes hauts, buste droit.",[L("",5)],[40],8)],
  "thruster":[
   X("wall-balls","Wall balls","Ballon de 6 kg (standard Doubles Mixte), cible à 3 m. Fluide, sans pause.",[L("",1)],[6],20),
-  X("thrusters-halteres","Thrusters haltères","Charge par haltère, rythme wall ball.",[L("",2)],[12],10)],
+  X("thrusters-halteres","Thrusters haltères","Charge par haltère, rythme wall ball.",[L("",0.5)],[12],10)],
  "fessiers":[
   X("pont-leste","Pont fessier lesté","Au sol, barre ou disque sur les hanches. Pause 1 s en haut.",[L("",5)],[40],12),
   X("hip-thrust-machine","Hip thrust machine","Chiffre de la machine.",[L("",5)],[60],10),
@@ -1143,14 +1145,14 @@ const ABS={opt:true,g:"abdos",k:"circuit",t:"Circuit abdos",rest:"1'30 entre les
  list:["Crunch touche genou puis cheville — 20 (épaules qui décollent, bas du dos au sol)","Relevés de jambes — 15, bas du dos plaqué","Mason twist — 10 (5/côté) sans poids, pieds au sol, buste droit. Mieux : Pallof press 10/côté","Dead bug — 10 par côté, lent","Side bend — 10 par côté, haltère léger (12 kg max), sans pencher en avant","Gainage — planche 45 s, puis latéral 30 s par côté"],
  l:[],s:[[[],null],[[],null],[[],null]]};
 /* 28/10 (v32) : rowing bûcheron en 3 points (une main sur le banc, deux pieds au sol) dans la Pull et le Full body ; même clé « bucheron » → charges et historique gardés */
-const BUCHERON3={g:"dos-unilat",k:"bucheron",t:"Rowing bûcheron 3 points",rest:"1'30",h:"Poids d’un haltère, reps par bras, pas de repos entre les deux bras. 3 points d'appui : une main sur le banc, les deux pieds au sol écartés, genoux légèrement fléchis, buste presque parallèle au sol, dos neutre, hanches bien de face. Tire l'haltère vers la hanche, coude près du corps, sans tourner le buste. Si le bas du dos tire : genou sur le banc (dans la liste).",l:[L("",2)]};
+const BUCHERON3={g:"dos-unilat",k:"bucheron",t:"Rowing bûcheron 3 points",rest:"1'30",h:"Poids d’un haltère, reps par bras, pas de repos entre les deux bras. 3 points d'appui : une main sur le banc, les deux pieds au sol écartés, genoux légèrement fléchis, buste presque parallèle au sol, dos neutre, hanches bien de face. Tire l'haltère vers la hanche, coude près du corps, sans tourner le buste. Si le bas du dos tire : genou sur le banc (dans la liste).",l:[L("",0.5)]};
 /* 28/10 (v33) : élévations latérales dégressives — 1 série = 10 reps à 8, 6 puis 4 kg sans repos, × 3 — dans le Full body et les séances Jambes + épaules */
-const LAT_DEG={g:"epaules",k:"laterales-degressif",t:"Élévations latérales dégressives",rest:"1'30",h:"Charge par haltère. 1 série = 3 charges à la suite, sans repos entre elles : 10 reps à la 1re, puis tout de suite 10 à la 2e, puis 10 à la 3e (8, 6 puis 4 kg), soit 30 reps. Reps = 10 à chaque charge. Coudes légèrement fléchis, monte jusqu'à hauteur d'épaules, sans élan, descente lente.",l:[L("",2),L("",2),L("",2)]};
+const LAT_DEG={g:"epaules",k:"laterales-degressif",t:"Élévations latérales dégressives",rest:"1'30",h:"Charge par haltère. 1 série = 3 charges à la suite, sans repos entre elles : 10 reps à la 1re, puis tout de suite 10 à la 2e, puis 10 à la 3e (8, 6 puis 4 kg), soit 30 reps. Reps = 10 à chaque charge. Coudes légèrement fléchis, monte jusqu'à hauteur d'épaules, sans élan, descente lente.",l:[L("",0.5),L("",0.5),L("",0.5)]};
 const S={
  push:{name:"Push",title:"Push — pecs / triceps",ex:[
-  {g:"pecs-haut",k:"inc-halteres",t:"Développé incliné haltères",rest:"2'30",h:"Charge par haltère.",l:[L("",2)],s:[[[26],10],[[28],8],[[30],8],[[32],8]]},
-  {g:"pecs",k:"couche-halteres",t:"Développé couché haltères",rest:"2'",h:"Charge par haltère.",l:[L("",2)],s:[[[26],10],[[28],10],[[30],10]]},
-  {g:"pecs-finisher",k:"ss-ecartes-presse",t:"Superset écartés + push press machine",rest:"1'30 entre les tours",h:"Sans repos entre les deux. 1) Écartés haltères sur banc plat (charge par haltère) : coudes légèrement fléchis, descente contrôlée, les coudes ne passent pas sous le niveau du banc. 2) Push press sur la machine Technogym à disques : charge = disques chargés sur chaque bras (les deux bras pareil). 10 bras droit, 10 bras gauche, puis 10 à deux bras : 30 reps par série. Dos collé au dossier, poignées à hauteur d'épaules, pousse sans verrouiller les coudes, descente en 2 s. Reps = 10 écartés, et 10 pour chaque partie de la machine.",l:[L("Écartés",2),L("Machine",2.5)],s:[[[10,10],10],[[12,12.5],10],[[12,12.5],10]]},
+  {g:"pecs-haut",k:"inc-halteres",t:"Développé incliné haltères",rest:"2'30",h:"Charge par haltère.",l:[L("",0.5)],s:[[[26],10],[[28],8],[[30],8],[[32],8]]},
+  {g:"pecs",k:"couche-halteres",t:"Développé couché haltères",rest:"2'",h:"Charge par haltère.",l:[L("",0.5)],s:[[[26],10],[[28],10],[[30],10]]},
+  {g:"pecs-finisher",k:"ss-ecartes-presse",t:"Superset écartés + push press machine",rest:"1'30 entre les tours",h:"Sans repos entre les deux. 1) Écartés haltères sur banc plat (charge par haltère) : coudes légèrement fléchis, descente contrôlée, les coudes ne passent pas sous le niveau du banc. 2) Push press sur la machine Technogym à disques : charge = disques chargés sur chaque bras (les deux bras pareil). 10 bras droit, 10 bras gauche, puis 10 à deux bras : 30 reps par série. Dos collé au dossier, poignées à hauteur d'épaules, pousse sans verrouiller les coudes, descente en 2 s. Reps = 10 écartés, et 10 pour chaque partie de la machine.",l:[L("Écartés",0.5),L("Machine",2.5)],s:[[[10,10],10],[[12,12.5],10],[[12,12.5],10]]},
   {g:"dips",k:"dips",t:"Dips",rest:"1'30",h:"Buste penché en avant. Poids du corps : règle tes reps.",l:[],s:rep([],6,3)},
   {g:"pecs-iso",k:"ecartes-poulie",t:"Écartés poulie",rest:"1'",h:"Chiffre affiché sur la colonne. Poulie à hauteur de poitrine, 1 s de contraction.",l:[L("",2.5)],s:[[[7.5],12],[[10],12],[[10],11]]},
   {g:"pecs-haut-iso",k:"poulie-basse",t:"Écartés poulie basse vers le haut",rest:"1'",h:"Haut des pecs. Chiffre affiché sur la colonne. Poulies en bas, un petit pas en avant, coudes légèrement fléchis : monte en arc jusqu'à hauteur des yeux, mains qui se rejoignent, 1 s de contraction en haut, redescente lente. Épaules basses : ce sont les pecs qui montent, pas les trapèzes.",l:[L("",2.5)],s:[[[5],10],[[7.5],10],[[5],10]]},
@@ -1163,7 +1165,7 @@ const S={
   {g:"dos-largeur",k:"ss-tirages",t:"Superset tirages",rest:"1'30 entre les tours",h:"Chiffre affiché sur la colonne. Vertical 10 reps puis horizontal 10 reps, sans repos entre les deux.",l:[L("Vert.",5),L("Horiz.",5)],s:[[[45,40],null],[[50,45],null],[[55,50],null],[[60,55],null]]},
   {...BUCHERON3,s:[[[30],10],[[30],10],[[36],7]]},
   {g:"grip",k:"suspension",t:"Suspension barre (grip)",rest:"1'30",h:"Avant le bloc biceps, grip encore frais. Le plus longtemps possible, puis règle la durée tenue : c’est ton sled pull et ton farmers carry.",l:[],u:"s",rs:5,s:[[[],45],[[],45]]},
-  {g:"biceps",k:"ss-biceps",t:"Superset biceps",rest:"1'30 entre les tours",h:"Zéro repos entre les deux. 1) Curl mur — 10 reps, poids d’un haltère, coudes collés au mur, zéro élan. 2) 21 barre EZ — poids total barre comprise, 7 bas → mi-course, 7 mi-course → haut, 7 complètes. La barre EZ sera plus légère qu’en exercice isolé : c’est la pré-fatigue, pas une régression.",l:[L("Curl",2),L("EZ",2.5)],s:rep([10,15],null,3)},
+  {g:"biceps",k:"ss-biceps",t:"Superset biceps",rest:"1'30 entre les tours",h:"Zéro repos entre les deux. 1) Curl mur — 10 reps, poids d’un haltère, coudes collés au mur, zéro élan. 2) 21 barre EZ — poids total barre comprise, 7 bas → mi-course, 7 mi-course → haut, 7 complètes. La barre EZ sera plus légère qu’en exercice isolé : c’est la pré-fatigue, pas une régression.",l:[L("Curl",0.5),L("EZ",2.5)],s:rep([10,15],null,3)},
   {g:"biceps-iso",k:"curl-poulie-unilat",t:"Curl unilatéral poulie",rest:"1'",h:"Chiffre affiché sur la colonne. 12 reps par bras, coude fixe le long du corps, descente lente. Finisher : charge légère, contraction propre.",l:[L("",2.5)],s:[[[5],12],[[7.5],10],[[7.5],10]]},
   {g:"lombaires",k:"circuit-lombaire",opt:true,t:"Renfo lombaire",rest:"1' entre les tours",h:"Zéro repos entre les 4 exercices, 1' après chaque tour. Charge légère, qualité avant tout. Aucune douleur ne doit apparaître : si le bas du dos tire, tu réduis l'amplitude ou tu stoppes.",
    list:["Hip hinge / good morning barre à vide — 12 reps, dos neutre, charnière à la hanche","Bird dog — 8 par côté, 3 s de maintien, bassin immobile","Extension lombaire sur banc 45° — 12 reps, pas d'hyperextension en haut","Pont fessier — 12 reps, pause 2 s en haut"],
@@ -1172,10 +1174,10 @@ const S={
   ABS]},
  legsA:{name:"Jambes A",title:"Jambes A — squat / épaules",ex:[
   {g:"quadris",k:"squat",t:"Squat",rest:"2'30",h:"Poids total, barre comprise. Charge axiale : commence léger, stop si le lombaire tire.",l:[L("",5)],s:rep([60],8,4)},
-  {g:"fentes",k:"fentes-marchees",t:"Fentes marchées lestées",rest:"1'30",h:"Poids d’un haltère (un dans chaque main). Reps = nombre de pas.",l:[L("",2)],s:rep([16],20,3)},
+  {g:"fentes",k:"fentes-marchees",t:"Fentes marchées lestées",rest:"1'30",h:"Poids d’un haltère (un dans chaque main). Reps = nombre de pas.",l:[L("",0.5)],s:rep([16],20,3)},
   {g:"ischios",k:"leg-curl",t:"Leg curl",rest:"1'",h:"Chiffre affiché sur la machine. Descente lente.",l:[L("",5)],s:rep([40],12,3)},
   {g:"adducteurs",k:"adducteurs-machine",t:"Adducteurs machine",rest:"1'",h:"Chiffre affiché sur la machine. Amplitude contrôlée, pas de rebond en ouverture.",l:[L("",5)],s:rep([40],12,3)},
-  {g:"epaules",k:"militaire",t:"Développé militaire",rest:"2'",h:"Haltères : poids d’un haltère. Barre : poids total. Reste gainé.",l:[L("",2)],s:rep([20],8,4)},
+  {g:"epaules",k:"militaire",t:"Développé militaire",rest:"2'",h:"Haltères : poids d’un haltère. Barre : poids total. Reste gainé.",l:[L("",0.5)],s:rep([20],8,4)},
   {...LAT_DEG,s:rep([8,6,4],10,3)},
   {g:"mollets",k:"mollets-unilat",t:"Montées de mollets unilatérales",rest:"45\"",h:"Reps par jambe, lent. Pour les tibias et les tendons.",l:[],s:rep([],10,3)},
   CARDIO,
@@ -1193,7 +1195,7 @@ const S={
  full:{name:"Full body",title:"Full body — tout le corps",ex:[
   {g:"overhead",k:"ohs",t:"Squat overhead",rest:"1'30",h:"Avant : 5 à 8 min de vélo ou de marche. Barre légère, poids total : technique et mobilité, ça prépare aussi le squat. Bras verrouillés, talons au sol.",l:[L("",5)],s:rep([30],6,3)},
   {g:"quadris",k:"squat",t:"Squat",rest:"2'30",h:"Poids total, barre comprise. 2 séries d'échauffement (barre à vide puis 40 kg). Descends à la parallèle, dos neutre ; si le bas du dos tire : presse à cuisses (dans la liste).",l:[L("",5)],s:rep([60],8,3)},
-  {g:"pecs",k:"couche-halteres",t:"Développé couché haltères",rest:"2'",h:"Charge par haltère. Omoplates serrées, garde 2 reps en réserve. Chest press machine dans la liste.",l:[L("",2)],s:[[[30],10],[[32],8],[[32],8]]},
+  {g:"pecs",k:"couche-halteres",t:"Développé couché haltères",rest:"2'",h:"Charge par haltère. Omoplates serrées, garde 2 reps en réserve. Chest press machine dans la liste.",l:[L("",0.5)],s:[[[30],10],[[32],8],[[32],8]]},
   {g:"souleve",k:"sdt",t:"Soulevé de terre",rest:"2'30",h:"Poids total, barre comprise. Barre contre les tibias, dos neutre, pousse le sol avec les jambes ; 2 séries d'échauffement avant. Commence léger : si le bas du dos tire, passe au trap bar ou au hip thrust (dans la liste).",l:[L("",5)],s:rep([70],8,3)},
   {g:"dos-largeur",k:"tirage-vertical",t:"Tirage vertical",rest:"1'30",h:"Chiffre de la colonne, prise large, tire vers le haut de la poitrine.",l:[L("",5)],s:rep([55],10,3)},
   {g:"epaules",k:"push-press-technogym",t:"Push press machine Technogym",rest:"1'30",h:"Machine à disques : charge = disques chargés sur chaque bras (les deux bras pareil). Une série = 10 bras droit, 10 bras gauche, puis 10 à deux bras : 30 reps, à saisir au total. Dos collé au dossier, poignées à hauteur d'épaules, pousse sans verrouiller les coudes, descente en 2 s. Les 10 à deux bras sont les plus durs : prends une charge qui t'y laisse 1 à 2 reps en réserve.",l:[L("",2.5)],s:rep([10],30,2)},
@@ -1224,7 +1226,7 @@ const CATALL=(()=>{const m={};
  return m})();
 const UDEF=new Map(),TAIL=new Set(["marche","circuit"]);
 function userDef(id,a){const ck=id+"|"+a.u+"|"+a.n+"|"+(a.k||"")+"|"+JSON.stringify(a.perso||"");if(UDEF.has(ck))return UDEF.get(ck);let d=null;
- if(a.perso){const p=a.perso;d={g:"perso",k:"perso",t:p.t||"Exercice perso",rest:"1'30",h:p.sec?"Ajouté par toi : règle la durée tenue à chaque série.":"Ajouté par toi : règle la charge et les reps à chaque série.",l:p.ch?[L("",2.5)]:[],u:p.sec?"s":undefined,rs:p.sec?5:undefined,s:rep(p.ch?[20]:[],p.sec?30:10,a.n)}}
+ if(a.perso){const p=a.perso;d={g:"perso",k:"perso",t:p.t||"Exercice perso",rest:"1'30",h:p.sec?"Ajouté par toi : règle la durée tenue à chaque série.":"Ajouté par toi : règle la charge et les reps à chaque série.",l:p.ch?[L("",0.5)]:[],u:p.sec?"s":undefined,rs:p.sec?5:undefined,s:rep(p.ch?[20]:[],p.sec?30:10,a.n)}}
  else{const c=CATALL[a.k];if(c)d={g:c.g,k:c.k,t:c.t,rest:c.rest||"1'30",h:c.h,l:c.l,u:c.u,rs:c.rs,list:c.list,s:rep((c.d||[]).slice(),c.r===undefined?null:c.r,a.n)}}
  if(d)d.user=a.u;UDEF.set(ck,d);return d}
 function exDef(id,i){if(typeof i==="number"||/^\d+$/.test(String(i)))return S[id].ex[+i];const a=((st[id]||{}).add||[]).find(a=>a.u===i);return a?userDef(id,a):null}
@@ -1357,10 +1359,19 @@ function dropSet(id,i){const x=st[id],m=extraMap(id);if(!m[i])return;const j=nSe
  x.done=(x.done||[]).filter(d=>String(d)!==i+"-"+j);m[i]--;if(!m[i])delete m[i];saveSt();renderSalle()}
 function setVal(id,i,j,v){vstore(id,i)[j]=v;saveSt();renderSalle()}
 function fmtK(n){return String(n).replace(".",",")}
-function stepper(text,dec,inc,cls){const w=document.createElement("div");w.className="step"+(cls?" "+cls:"");
+/* 28/10 (v35) : edit = {v, set} → toucher le chiffre ouvre un champ pour taper la charge (au 0,5 kg ou plus fin) */
+function stepper(text,dec,inc,cls,edit){const w=document.createElement("div");w.className="step"+(cls?" "+cls:"");
  const m=document.createElement("button"),p=document.createElement("button"),v=document.createElement("span");
  m.textContent="−";p.textContent="+";v.textContent=text;m.setAttribute("aria-label","Moins");p.setAttribute("aria-label","Plus");
- m.onclick=dec;p.onclick=inc;w.append(m,v,p);return w}
+ m.onclick=dec;p.onclick=inc;
+ if(edit){v.className="edit-kg";v.setAttribute("role","button");v.tabIndex=0;v.setAttribute("aria-label",text+", toucher pour taper la charge");
+  const open=()=>{if(v.querySelector("input"))return;const inp=document.createElement("input");inp.type="text";inp.inputMode="decimal";inp.autocomplete="off";inp.value=fmtK(edit.v);
+   v.textContent="";v.appendChild(inp);inp.focus();inp.select();let fini=false;
+   const commit=ok=>{if(fini)return;fini=true;const x=parseFloat(inp.value.replace(",",".").replace(/[^0-9.]/g,""));
+    if(ok&&isFinite(x)&&x>=0&&x<=500)edit.set(Math.round(x*100)/100);else v.textContent=text};
+   inp.onblur=()=>commit(true);inp.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();inp.blur()}else if(e.key==="Escape")commit(false)}};
+  v.onclick=open;v.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();open()}}}
+ w.append(m,v,p);return w}
 function summary(ex,v){const a=[];
  if(ex.l.length)a.push(ex.l.map((l,m)=>(l.n?l.n+" ":"")+fmtK(v.kg[m])+" kg").join(" · "));
  if(v.r!=null)a.push((ex.l.length?"× ":"")+v.r+" "+(ex.u||"reps"));
@@ -1456,8 +1467,8 @@ function renderSalle(){
    blk.appendChild(b);
    const ctl=document.createElement("div");ctl.className="ctl";
    ex.l.forEach((l,m)=>ctl.appendChild(stepper((l.n?l.n+" ":"")+fmtK(v.kg[m])+" kg",
-    ()=>{v.kg[m]=Math.max(0,+(v.kg[m]-l.k).toFixed(1));setVal(cur,i,j,v)},
-    ()=>{v.kg[m]=+(v.kg[m]+l.k).toFixed(1);setVal(cur,i,j,v)})));
+    ()=>{v.kg[m]=Math.max(0,+(v.kg[m]-l.k).toFixed(2));setVal(cur,i,j,v)},
+    ()=>{v.kg[m]=+(v.kg[m]+l.k).toFixed(2);setVal(cur,i,j,v)},"",{v:v.kg[m],set:n=>{v.kg[m]=n;setVal(cur,i,j,v)}})));
    if(v.r!=null){const rs=ex.rs||1;ctl.appendChild(stepper(v.r+" "+(ex.u||"reps"),()=>{v.r=Math.max(rs,v.r-rs);setVal(cur,i,j,v)},()=>{v.r=Math.min(ex.u==="s"?300:ex.u==="m"?200:ex.u?120:60,v.r+rs);setVal(cur,i,j,v)}))}
    if(ctl.children.length)blk.appendChild(ctl);
    sec.appendChild(blk)});
