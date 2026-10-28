@@ -406,11 +406,29 @@ function effDays(w){
  const base=keyedDays(w),D=base.map(d=>({date:d.date,items:[]})),at=x=>D.find(y=>y.date===x);
  base.forEach(d=>d.items.forEach(it=>{const m=MODS[it.key];
   if(m&&m.s==="reporte"&&m.to!==d.date&&at(m.to)){at(m.to).items.push({...it,moved:d.date});return}
-  at(d.date).items.push(m&&m.s==="annule"?{...it,cancel:true}:it)}));
- for(const k in MODS){const m=MODS[k];if(m.s==="ajout"&&k.startsWith(w.start+"|+")&&at(m.date))at(m.date).items.push({...m.it,key:k,added:true})}
+  at(d.date).items.push(m&&m.s==="annule"?{...it,cancel:true}:m&&m.s==="remplace"?{...it,cancel:true,replaced:true,par:m.par}:it)}));
+ for(const k in MODS){const m=MODS[k];if(m.s==="ajout"&&k.startsWith(w.start+"|+")&&at(m.date))at(m.date).items.push({...m.it,key:k,added:true,...(m.rp?{cancel:true,replaced:true,par:m.rp}:{}),...(m.rep&&m.rep.length?{fullrep:true}:{})})}
  D.forEach(d=>{if(d.items.some(x=>x.k!=="repos"&&!x.cancel))d.items=d.items.filter(x=>x.k!=="repos");
   d.items.sort((a,b)=>(RANK[a.k]??5)-(RANK[b.k]??5))});
  return D}
+/* Semaine où tout ne passera pas : Push / Pull / Jambes pas encore faits → un seul Full body le jour choisi.
+   Les séances remplacées gardent leur ancien état (prev) pour pouvoir revenir en arrière. */
+function remplacerParFull(w,date){
+ const A=acts(),D=effDays(w);
+ let fk=Object.keys(MODS).find(k=>k.startsWith(w.start+"|+")&&MODS[k].s==="ajout"&&MODS[k].date===date&&MODS[k].it.salle==="full"&&!MODS[k].rp);
+ if(!fk){fk=w.start+"|+"+Date.now().toString(36);MODS[fk]={s:"ajout",date,it:{...TYPES.full.it},le:TODAY}}
+ const rep=[],noms=[];
+ D.forEach(d=>d.items.forEach(it=>{if(it.k!=="muscu"||it.cancel||!it.salle||it.salle==="full"||it.key===fk)return;
+  if(doneOn(d.date,"muscu",A,it))return; // déjà faite : on la garde
+  if(it.added){MODS[it.key].rp=fk}else MODS[it.key]={s:"remplace",par:fk,prev:MODS[it.key]||null,le:TODAY};
+  rep.push(it.key);noms.push(it.t)}));
+ const f=MODS[fk];f.rep=[...new Set([...(f.rep||[]),...rep])];
+ if(noms.length)f.it={...f.it,note:"À la place de : "+[...new Set(noms)].join(", ")};
+ saveMods();return rep.length}
+function annulerRemplacement(fk){const f=MODS[fk];if(!f)return;
+ (f.rep||[]).forEach(k=>{const m=MODS[k];if(!m)return;
+  if(m.s==="remplace"&&m.par===fk){if(m.prev)MODS[k]=m.prev;else delete MODS[k]}
+  else if(m.s==="ajout"&&m.rp===fk)delete m.rp})}
 function weekOf(date){return WEEKS.find(w=>date>=w.start&&date<=addD(w.start,6))}
 function modInfo(key){const ws=key.split("|")[0],w=WEEKS.find(x=>x.start===ws),m=MODS[key];if(!w)return null;
  if(m&&m.s==="ajout")return {t:m.it.t,date:m.date};
@@ -625,6 +643,7 @@ function itemDetail(it){
 }
 function statusOf(date,it,A){
  if(it.k==="repos")return null;
+ if(it.replaced)return ["annule","Remplacée"];
  if(it.cancel)return ["annule","Annulé"];
  const done=doneOn(date,it.k,A,it);
  if(done)return ["fait","✓ Fait"];
@@ -635,7 +654,7 @@ function statusOf(date,it,A){
 function itemRow(d,it,isT,s,w){
  const chips=(it.moved?`<span class="chip moved">Déplacée du ${dm(it.moved)}</span>`:"")+(it.added?`<span class="chip moved">Ajoutée</span>`:"")+(it.k==="kine"?`<span class="chip lock">RDV</span>`:it.lock?`<span class="chip lock">Fixe</span>`:it.cut?`<span class="chip">Coupe ${it.cut}</span>`:"");
  let h=`<div class="it ${it.cancel?"cancel":""}"><div class="txt"><strong>${chips}${esc(it.t)}</strong>
-  ${it.note&&!it.cancel?`<span class="small">${esc(it.note)}</span>`:""}${it.k==="kine"&&!it.cancel&&it.h?`<span class="muted small">${esc(it.h)}</span>`:""}${it.k==="run"&&!it.cancel?`<span class="muted small">${it.ld?"6 lignes droites · ":""}${it.ref?"Protocole de référence · ":""}FC 130–140</span>`:""}${s&&s[0]==="fait"?(re=>re?`<span class="muted small">Effort relatif ${re}</span>`:"")(acts().filter(a=>matchAct(a,d.date,it)).reduce((n,a)=>n+(+a.re||0),0)):""}${it.k==="box"&&s&&s[0]==="fait"?wodRow(acts().find(a=>matchAct(a,d.date,it))):""}
+  ${it.note&&!it.cancel?`<span class="small">${esc(it.note)}</span>`:""}${it.replaced&&MODS[it.par]?`<span class="muted small">par le Full body du ${JOURSL[diff(w.start,MODS[it.par].date)]} ${dm(MODS[it.par].date)}</span>`:""}${it.k==="kine"&&!it.cancel&&it.h?`<span class="muted small">${esc(it.h)}</span>`:""}${it.k==="run"&&!it.cancel?`<span class="muted small">${it.ld?"6 lignes droites · ":""}${it.ref?"Protocole de référence · ":""}FC 130–140</span>`:""}${s&&s[0]==="fait"?(re=>re?`<span class="muted small">Effort relatif ${re}</span>`:"")(acts().filter(a=>matchAct(a,d.date,it)).reduce((n,a)=>n+(+a.re||0),0)):""}${it.k==="box"&&s&&s[0]==="fait"?wodRow(acts().find(a=>matchAct(a,d.date,it))):""}
   <span class="row" style="gap:14px">${it.salle&&!isT&&!it.cancel?`<button class="link" data-salle="${it.salle}">Checklist</button>`:""}${it.k==="run"&&!it.cancel?`<button class="link small-link" data-det="${it.key}">${DET===it.key?"Fermer le détail":"Détail"}</button>`:""}${it.k!=="repos"?`<button class="link small-link" data-edit="${it.key}">${EDIT===it.key?"Fermer":"Modifier"}</button>`:""}</span></div>${s?`<span class="st ${s[0]}">${s[1]}</span>`:""}</div>`;
  if(DET===it.key)h+=runDetailHTML(it,d.date);
  if(EDIT===it.key)h+=editPanel(d,it,w);
@@ -644,6 +663,7 @@ function wodRow(a){if(!a)return "";const v=kmWod(a),src=BOXKM[a.id]!=null?"corri
  return `<span class="wodkm"><span class="muted small">Course dans le WOD${src?` (${src})`:""}</span><span class="step sm"><button type="button" data-bkm="${esc(a.id)}" data-dv="-0.2" aria-label="Moins 200 m">−</button><span>${fr(v)} km</span><button type="button" data-bkm="${esc(a.id)}" data-dv="0.2" aria-label="Plus 200 m">+</button></span></span>`}
 /* Modifier une séance : cette semaine (n'importe quel jour, même passé) ou chaque semaine (semaine type) */
 function editPanel(d,it,w){
+ if(it.replaced)return `<div class="edit"><span class="small">Remplacée par le Full body${MODS[it.par]?` du ${JOURSL[diff(w.start,MODS[it.par].date)]} ${dm(MODS[it.par].date)}`:""}.</span><div class="chips"><button class="chipbtn" data-unrep="${it.key}">Remettre comme prévu</button></div></div>`;
  const days=[];for(let i=0;i<7;i++){const x=addD(w.start,i);if(x!==d.date)days.push(x)}
  const slot=it.added?null:slotsAt(w.start).find(x=>x.id===it.id),m=MODS[it.key];
  let h=`<div class="edit"><span class="small muted">${it.added?"La déplacer au :":"Cette semaine, la déplacer au :"}</span>
@@ -651,13 +671,17 @@ function editPanel(d,it,w){
  if(slot)h+=`<span class="small muted">Chaque semaine, dès la S${w.s} :</span>
   <div class="chips">${JOURS.map((j,i)=>`<button class="chipbtn" data-every="${it.id}" data-day="${i}" aria-pressed="${slot.d===i}"${slot.d===i?" disabled":""}>${j}</button>`).join("")}</div>`;
  h+=`<div class="chips">${it.added?`<button class="chipbtn danger" data-del="${it.key}">Supprimer</button>`:(it.cancel?"":`<button class="chipbtn danger" data-cancel="${it.key}">Annuler cette semaine</button>`)}${slot?`<button class="chipbtn danger" data-unprog="${it.key}">Retirer du programme</button>`:""}${m&&!it.added?`<button class="chipbtn" data-restore="${it.key}">Remettre comme prévu</button>`:""}</div>`;
+ if(it.k==="muscu"&&!it.cancel&&it.salle&&it.salle!=="full")h+=`<span class="small muted">Semaine où tout ne passera pas : un seul Full body ${JOURSL[diff(w.start,d.date)]} remplace les Push, Pull et Jambes pas encore faits.</span><div class="chips"><button class="chipbtn" data-fullrep="${d.date}">Remplacer par un Full body</button></div>`;
+ if(it.fullrep)h+=`<span class="small muted">Supprimer ce Full body remet les séances qu'il remplaçait.</span>`;
  if(CONFIRM===it.key)h+=`<div class="alert warn">${it.k==="kine"?`<strong>Rendez-vous kiné</strong><p class="small">Si tu l'annules, recale-le avec ton kiné dans la semaine : il fait partie de la prépa.</p>`:`<strong>Séance fixe</strong><p class="small">Les box et les EF tiennent la prépa : déplace-la plutôt. L'objectif de la semaine reste le même.</p>`}<div><button class="chipbtn danger" data-cancelok="${it.key}">Annuler quand même</button></div></div>`;
  if(CONFIRM==="rm|"+it.key)h+=`<div class="alert warn"><strong>Retirer du programme</strong><p class="small">« ${esc(it.t)} » disparaît de toutes les semaines à partir de la S${w.s}.${it.lock?" C'est une séance fixe de la prépa : seulement si le programme change vraiment.":""}</p><div><button class="chipbtn danger" data-unprogok="${it.key}">Retirer</button></div></div>`;
  return h+`</div>`}
 function addPanel(w,date){const wd=diff(w.start,date);
  return `<div class="edit"><span class="small muted">Ajouter ${JOURSL[wd]} ${dm(date)} :</span>
   <div class="chips">${Object.entries(TYPES).map(([k,x])=>`<button class="chipbtn" data-addtype="${k}" data-date="${date}">${x.l}</button>`).join("")}</div>
-  <label class="check"><input type="checkbox" id="addrec"${ADD_REC?" checked":""}> Chaque ${JOURSL[wd]}, à partir de la S${w.s}</label></div>`}
+  <label class="check"><input type="checkbox" id="addrec"${ADD_REC?" checked":""}> Chaque ${JOURSL[wd]}, à partir de la S${w.s}</label>
+  <span class="small muted">Ou, si tout ne passera pas cette semaine :</span>
+  <div class="chips"><button class="chipbtn" data-fullrep="${date}">Full body à la place de la muscu de la semaine</button></div></div>`}
 /* Semaine type de la semaine affichée (les changements valent pour elle et les suivantes) */
 function progBlock(w){const S=slotsAt(w.start),diffs=progDiff(S);
  const rows=JOURS.map((j,i)=>{const its=S.filter(s=>s.d===i&&(!s.src||WEEKS.some(x=>x.start>=w.start&&x[s.src]))).sort((a,b)=>(RANK[a.k]??5)-(RANK[b.k]??5));
@@ -684,9 +708,9 @@ function renderSemaine(){
  if(td){h+=`<div class="block"><span class="eyebrow">Aujourd'hui</span>${adjHTML(conseil(TODAY,A),"Ajustement du jour")}<div class="todo">${td.items.map(it=>{const s=statusOf(TODAY,it,A);
    const ret=A.filter(a=>matchAct(a,TODAY,it)).map(a=>[retourSeance(a,A),kmWod(a)?fr(kmWod(a))+" km courus":""].filter(Boolean).join(" · ")).filter(Boolean).join(" · ");
    return `<div class="card k-${it.k}"><div class="row between"><h3>${it.moved?`<span class="chip moved">Déplacée du ${dm(it.moved)}</span>`:it.added?`<span class="chip moved">Ajoutée</span>`:""}${esc(it.t)}</h3>${s?`<span class="st ${s[0]}">${s[1]}</span>`:""}</div>
-   ${it.note?`<p><strong>${esc(it.note)}</strong></p>`:""}${it.k==="run"&&!it.cancel?runDetailHTML(it,TODAY):itemDetail(it)?`<p class="muted small">${esc(itemDetail(it))}</p>`:""}
+   ${it.note?`<p><strong>${esc(it.note)}</strong></p>`:""}${it.cancel?"":it.k==="run"?runDetailHTML(it,TODAY):itemDetail(it)?`<p class="muted small">${esc(itemDetail(it))}</p>`:""}
    ${ret?`<p class="retour"><strong>Retour :</strong> ${esc(ret)}</p>`:""}
-   ${it.salle?`<div><button class="btn" data-salle="${it.salle}">Ouvrir la checklist</button></div>`:""}</div>`}).join("")}</div></div>`;
+   ${it.salle&&!it.cancel?`<div><button class="btn" data-salle="${it.salle}">Ouvrir la checklist</button></div>`:""}</div>`}).join("")}</div></div>`;
   h+=chargeBlock(A)}
  // Tuiles (objectifs = séances prévues cette semaine, changements compris)
  const plan=D.flatMap(d=>d.items).filter(x=>!x.cancel),nb=k=>plan.filter(x=>x.k===k).length;
@@ -717,7 +741,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis, séances déplacées, annulées ou ajoutées des 7 derniers jours et ta semaine type, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 23 · 28/10</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 24 · 28/10</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -735,7 +759,7 @@ function renderSemaine(){
   editProg(w.start,sl=>sl.map(x=>x.id===id?{...x,d:day}:x));if(MODS[k]&&MODS[k].s==="reporte"){delete MODS[k];saveMods()}
   EDIT=null;CONFIRM=null;renderSemaine()});
  el.querySelectorAll("[data-det]").forEach(b=>b.onclick=()=>{DET=DET===b.dataset.det?null:b.dataset.det;renderSemaine()});
- el.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{delete MODS[b.dataset.del];EDIT=null;CONFIRM=null;saveMods();renderSemaine()});
+ el.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{annulerRemplacement(b.dataset.del);delete MODS[b.dataset.del];EDIT=null;CONFIRM=null;saveMods();renderSemaine()});
  el.querySelectorAll("[data-unprog]").forEach(b=>b.onclick=()=>{CONFIRM="rm|"+b.dataset.unprog;renderSemaine()});
  el.querySelectorAll("[data-unprogok]").forEach(b=>b.onclick=()=>{const k=b.dataset.unprogok,id=k.split("|")[1];
   editProg(w.start,sl=>sl.filter(x=>x.id!==id));if(MODS[k]){delete MODS[k];saveMods()}EDIT=null;CONFIRM=null;renderSemaine()});
@@ -753,6 +777,11 @@ function renderSemaine(){
   if(it&&it.lock&&CONFIRM!==k){CONFIRM=k;renderSemaine();return}MODS[k]={s:"annule",le:TODAY};EDIT=null;CONFIRM=null;saveMods();renderSemaine()});
  el.querySelectorAll("[data-cancelok]").forEach(b=>b.onclick=()=>{MODS[b.dataset.cancelok]={s:"annule",le:TODAY};EDIT=null;CONFIRM=null;saveMods();renderSemaine()});
  el.querySelectorAll("[data-restore]").forEach(b=>b.onclick=()=>{delete MODS[b.dataset.restore];EDIT=null;CONFIRM=null;saveMods();renderSemaine()});
+ el.querySelectorAll("[data-unrep]").forEach(b=>b.onclick=()=>{const k=b.dataset.unrep,m=MODS[k];
+  if(m&&m.s==="remplace"){if(m.prev)MODS[k]=m.prev;else delete MODS[k]}else if(m&&m.s==="ajout")delete m.rp;
+  EDIT=null;CONFIRM=null;saveMods();renderSemaine()});
+ el.querySelectorAll("[data-fullrep]").forEach(b=>b.onclick=()=>{const dt=b.dataset.fullrep;remplacerParFull(w,dt);EDIT=null;ADD=null;ADD_REC=false;CONFIRM=null;
+  if(dt===TODAY){cur="full";sv("salle-tab",cur);sv("salle-tab-day",now.toDateString());renderSalle()}renderSemaine()});
  const pe=$("#penable");if(pe)pe.onclick=enablePush;
  const ps=$("#pshare");if(ps)ps.onclick=sharePush;
  const pt=$("#ptest");if(pt)pt.onclick=testPush;
@@ -793,7 +822,7 @@ function coachText(){const from=addD(TODAY,-6);
  let t=`Prépa HYROX — mes saisies du ${dm(from)} au ${dm(TODAY)}\n`;
  t+="\nSéances salle :\n"+(se.length?se.map(s=>`- ${dm(s.date)} ${s.titre}\n`+(s.lignes||[]).map(l=>"   "+l).join("\n")).join("\n"):"- aucune");
  const mo=Object.entries(MODS).filter(([k])=>k.split("|")[0]>=monday(from)).map(([k,m])=>{const i=modInfo(k);if(!i)return null;
-  return [i.date,m.s==="ajout"?`- ${i.t} ajoutée le ${dm(m.date)}`:m.s==="annule"?`- ${i.t} du ${dm(i.date)} : annulée`:`- ${i.t} du ${dm(i.date)} : déplacée au ${dm(m.to)}`]}).filter(Boolean).sort().map(x=>x[1]);
+  return [i.date,m.s==="ajout"?`- ${i.t} ajoutée le ${dm(m.date)}${m.rp&&MODS[m.rp]?" (remplacée par le full body du "+dm(MODS[m.rp].date)+")":""}${m.rep&&m.rep.length?" à la place de la muscu de la semaine":""}`:m.s==="annule"?`- ${i.t} du ${dm(i.date)} : annulée`:m.s==="remplace"?`- ${i.t} du ${dm(i.date)} : remplacée par le full body${MODS[m.par]?" du "+dm(MODS[m.par].date):""}`:`- ${i.t} du ${dm(i.date)} : déplacée au ${dm(m.to)}`]}).filter(Boolean).sort().map(x=>x[1]);
  t+="\n\nSéances déplacées / annulées / ajoutées :\n"+(mo.length?mo.join("\n"):"- aucune");
  const pv=PROG.map(v=>{const x=progDiff(v.slots);return `- à partir du ${dm(v.from)} : ${x.length?x.join(" ; "):"programme d'origine"}`});
  if(pv.length)t+="\n\nSemaine type modifiée :\n"+pv.join("\n");
