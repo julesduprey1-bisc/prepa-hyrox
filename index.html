@@ -742,7 +742,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis, séances déplacées, annulées ou ajoutées des 7 derniers jours et ta semaine type, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 30 · 28/10</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 31 · 28/10</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -1218,11 +1218,11 @@ if(!st.pushV12){const P=st.push,sh=k=>{const i=+k;return i>=5?i+1:i};
  st.pushV12=true;sv("salle-v4",st)}
 /* 24/10 : écartés poulie haute insérés en 7e position du Push → décalage pour l'index 6 et plus */
 /* 28/10 : Full body raccourcis → saisies remises à la nouvelle position de chaque exercice (les exercices retirés sont oubliés) */
-function remapSeance(id,map){const x=st[id];if(!x)return;const mv=k=>map[+k];const nbS=i=>S[id].ex[i]?S[id].ex[i].s.length:0;
+function remapSeance(id,map){const x=st[id];if(!x)return;const mv=k=>map[+k];const xm=(x.extra&&x.extra.m)||{};const nbS=(i,old)=>S[id].ex[i]?S[id].ex[i].s.length+(xm[old]||0):0;
  const nv={};for(const k in (x.val||{}))if(mv(k)!=null)nv[mv(k)]=x.val[k];x.val=nv;
  const vx={};for(const k in (x.vx||{})){const [i,c]=k.split("|");if(mv(i)!=null)vx[mv(i)+"|"+c]=x.vx[k]}x.vx=vx;
- x.done=(x.done||[]).map(d=>{const [i,j]=String(d).split("-");return mv(i)!=null&&+j<nbS(mv(i))?mv(i)+"-"+j:null}).filter(Boolean);
- for(const o of [x.skip,x.pick])if(o&&o.m){const m={};for(const k in o.m)if(mv(k)!=null)m[mv(k)]=o.m[k];o.m=m}
+ x.done=(x.done||[]).map(d=>{const [i,j]=String(d).split("-");return mv(i)!=null&&+j<nbS(mv(i),i)?mv(i)+"-"+j:null}).filter(Boolean);
+ for(const o of [x.skip,x.pick,x.extra])if(o&&o.m){const m={};for(const k in o.m)if(mv(k)!=null)m[mv(k)]=o.m[k];o.m=m}
  for(const d in (x.hist||{})){const m={};for(const k in x.hist[d])if(mv(k)!=null)m[mv(k)]=x.hist[d][k];x.hist[d]=m}}
 if(!st.fullV26){remapSeance("full",{0:0,1:1,2:2,3:3,5:4,7:5,8:6});remapSeance("fullpdc",{0:0,1:1,2:2,3:3,4:4,8:5,10:6});st.fullV26=true;sv("salle-v4",st)}
 if(!st.fullV27){remapSeance("full",{1:2});st.fullV27=true;sv("salle-v4",st)}
@@ -1233,9 +1233,9 @@ if(!st.pushV13){const P=st.push,sh=k=>{const i=+k;return i>=6?i+1:i};
  P.done=(P.done||[]).map(x=>{const [i,j]=String(x).split("-");return sh(i)+"-"+j});
  if(P.skip&&P.skip.m){const m={};for(const k in P.skip.m)m[sh(k)]=P.skip.m[k];P.skip.m=m}
  st.pushV13=true;sv("salle-v4",st)}
-function recapLinesFor(id,date){const x=st[id],H=(x.hist||{})[date]||{},sk=(x.skip&&x.skip.date===date)?x.skip.m:{},done=new Set(x.done||[]);
+function recapLinesFor(id,date){const x=st[id],H=(x.hist||{})[date]||{},sk=(x.skip&&x.skip.date===date)?x.skip.m:{},xm=(x.extra&&x.extra.date===date)?x.extra.m:{},done=new Set(x.done||[]);
  return S[id].ex.map((_,i)=>{const k=H[i]||S[id].ex[i].k,ex=exFor(id,i,k);if(sk[i]===true)return ex.t+" : non fait";
-  const sets=ex.s.map((_,j)=>done.has(i+"-"+j)?summary(ex,valFor(id,i,j,k)):"").filter(Boolean);
+  const sets=Array.from({length:ex.s.length+(xm[i]||0)},(_,j)=>done.has(i+"-"+j)?summary(ex,valFor(id,i,j,k)):"").filter(Boolean);
   return ex.t+(sets.length?" : "+sets.join(" / "):" : non fait")})}
 function clotureAuto(){if(new Date().getHours()<4)return;let ch=false;
  for(const id in S){const x=st[id];if(!x||!(x.done||[]).length)continue;
@@ -1245,7 +1245,7 @@ function clotureAuto(){if(new Date().getHours()<4)return;let ch=false;
   if(x.date===TODAY)continue;
   if(x.date&&!SEANCES.some(r=>r.date===x.date&&r.seance===id)){
    SEANCES=[{date:x.date,seance:id,titre:S[id].title,lignes:recapLinesFor(id,x.date),enregistreLe:new Date().toISOString(),auto:true},...SEANCES].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,80);sv("prepa-seances",SEANCES)}
-  x.done=[];x.skip=null;x.pick=null;delete x.date;ch=true}
+  x.done=[];x.skip=null;x.pick=null;x.extra=null;delete x.date;ch=true}
  if(ch)saveSt()}
 if(!st.seancesV19){let ch=false;SEANCES.forEach(r=>{if(!r.auto&&r.seance==="push"&&r.date==="2026-10-25"&&String(r.enregistreLe||"")<"2026-10-25T12:00"&&!SEANCES.some(o=>o.seance==="push"&&o.date==="2026-10-24")){r.date="2026-10-24";ch=true}});
  if(ch)sv("prepa-seances",SEANCES);st.seancesV19=true;sv("salle-v4",st)}
@@ -1279,8 +1279,18 @@ function vstoreFor(id,i,k){const ex=S[id].ex[i],x=st[id];
  if(!k||k===ex.k){x.val[i]=x.val[i]||{};return x.val[i]}
  x.vx=x.vx||{};return x.vx[i+"|"+k]||(x.vx[i+"|"+k]={})}
 function val(id,i,j){return valFor(id,i,j,pickKey(id,i))}
-function valFor(id,i,j,k){const d=exFor(id,i,k).s[j],v=vstoreFor(id,i,k)[j];
+function valFor(id,i,j,k){const s=exFor(id,i,k).s,v=vstoreFor(id,i,k)[j];
+ if(j>=s.length&&!v)return valFor(id,i,j-1,k); /* série ajoutée sans saisie : comme la série d'avant */
+ const d=s[Math.min(j,s.length-1)];
  return {kg:(v&&v.kg&&v.kg.length===d[0].length)?v.kg.slice():d[0].slice(),r:(v&&v.r!=null)?v.r:d[1]}}
+/* 28/10 (v31) : séries ajoutées pendant la séance, sur n'importe quel exercice (comptent pour la séance du jour, remises à zéro avec elle) */
+function extraMap(id){const x=st[id];return x.extra&&x.extra.date===TODAY?x.extra.m:{}}
+function nSets(id,i){return S[id].ex[i].s.length+(extraMap(id)[i]||0)}
+function addSet(id,i){const x=st[id],k=pickKey(id,i),n=nSets(id,i);
+ vstoreFor(id,i,k)[n]=valFor(id,i,n-1,k);
+ if(!x.extra||x.extra.date!==TODAY)x.extra={date:TODAY,m:{}};x.extra.m[i]=(x.extra.m[i]||0)+1;saveSt();renderSalle()}
+function dropSet(id,i){const x=st[id],m=extraMap(id);if(!m[i])return;const j=nSets(id,i)-1;
+ x.done=(x.done||[]).filter(d=>String(d)!==i+"-"+j);m[i]--;if(!m[i])delete m[i];saveSt();renderSalle()}
 function setVal(id,i,j,v){vstore(id,i)[j]=v;saveSt();renderSalle()}
 function fmtK(n){return String(n).replace(".",",")}
 function stepper(text,dec,inc){const w=document.createElement("div");w.className="step";
@@ -1295,7 +1305,7 @@ function skipMap(id){const x=st[id];return x.skip&&x.skip.date===TODAY?x.skip.m:
 function efToday(){const w=WEEKS.find(w=>TODAY>=w.start&&TODAY<=addD(w.start,6));if(!w)return false;const d=effDays(w).find(x=>x.date===TODAY);return !!d&&d.items.some(x=>x.k==="run"&&!x.cancel)}
 function isSkipped(id,i){const ex=S[id].ex[i];const m=skipMap(id);if(i in m)return m[i];return (ex===CARDIO&&efToday())||!!ex.off}
 function setSkip(id,i,v){const x=st[id];if(!x.skip||x.skip.date!==TODAY)x.skip={date:TODAY,m:{}};x.skip.m[i]=v;saveSt();renderSalle()}
-function recapLines(){const sess=S[cur];return sess.ex.map((_,i)=>{const ex=exAt(cur,i);if(isSkipped(cur,i))return ex.t+" : non fait";const sets=ex.s.map((_,j)=>summary(ex,val(cur,i,j))).filter(Boolean);return ex.t+(sets.length?" : "+sets.join(" / "):" : fait")})}
+function recapLines(){const sess=S[cur];return sess.ex.map((_,i)=>{const ex=exAt(cur,i);if(isSkipped(cur,i))return ex.t+" : non fait";const sets=Array.from({length:nSets(cur,i)},(_,j)=>summary(ex,val(cur,i,j))).filter(Boolean);return ex.t+(sets.length?" : "+sets.join(" / "):" : fait")})}
 function saveSeance(){const sess=S[cur],dt=st[cur].date||TODAY;const rec={date:dt,seance:cur,titre:sess.title,lignes:recapLines(),enregistreLe:new Date().toISOString()};
  SEANCES=[rec,...SEANCES.filter(x=>!(x.date===dt&&x.seance===cur))].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,80);sv("prepa-seances",SEANCES);
  SAVE_MSG="Enregistrée. Envoie-la moi depuis l'onglet Semaine.";renderSalle();renderSemaine()}
@@ -1306,12 +1316,13 @@ function renderSalle(){
  const sess=S[cur],s=st[cur],done=new Set(s.done);
  $("#stitle").textContent=sess.title;list.innerHTML="";
  const live=sess.ex.map((_,i)=>!isSkipped(cur,i));
- const total=sess.ex.reduce((n,e,i)=>n+(live[i]?e.s.length:0),0);
- const doneN=sess.ex.reduce((n,e,i)=>n+(live[i]?e.s.filter((_,j)=>done.has(i+"-"+j)).length:0),0);
- sess.ex.forEach((ex0,i)=>{const ex=exAt(cur,i);
+ const idx=i=>Array.from({length:nSets(cur,i)},(_,j)=>j);
+ const total=sess.ex.reduce((n,e,i)=>n+(live[i]?nSets(cur,i):0),0);
+ const doneN=sess.ex.reduce((n,e,i)=>n+(live[i]?idx(i).filter(j=>done.has(i+"-"+j)).length:0),0);
+ sess.ex.forEach((ex0,i)=>{const ex=exAt(cur,i),ns=nSets(cur,i);
   const sec=document.createElement("div");sec.className="ex";
   if(!live[i])sec.classList.add("skipped");
-  else if(ex.s.every((_,j)=>done.has(i+"-"+j)))sec.classList.add("complete");
+  else if(idx(i).every(j=>done.has(i+"-"+j)))sec.classList.add("complete");
   sec.innerHTML=`<h2>${ex.t}</h2>${ex.rest&&live[i]?`<p class="rest">Repos : ${ex.rest}</p>`:""}${live[i]?`<p class="hint">${ex.h}</p>${ex.list?`<ol class="circ">${ex.list.map(x=>`<li>${x}</li>`).join("")}</ol>`:""}`:""}`;
   const opts=slotOpts(cur,i);
   if(live[i]&&opts.length>1){const pr=document.createElement("label");pr.className="pickrow";
@@ -1329,11 +1340,12 @@ function renderSalle(){
    if(ex0===CARDIO&&efToday()&&!(i in skipMap(cur))){const n=document.createElement("span");n.className="small muted";n.textContent="Non par défaut : EF prévue aujourd'hui.";row.appendChild(n)}
    (sec.querySelector(".pickrow")||sec.querySelector("h2")).after(row);
    if(!live[i]){const n=document.createElement("p");n.className="small muted";n.textContent="Pas fait aujourd'hui : ne compte pas dans la séance.";sec.appendChild(n);list.appendChild(sec);return}}
-  ex.s.forEach((_,j)=>{
+  const tour=ex.t.startsWith("Tri-set")||ex.t.startsWith("Superset");
+  idx(i).forEach(j=>{
    const id=i+"-"+j,v=val(cur,i,j),blk=document.createElement("div");blk.className="setblk";
    const b=document.createElement("button");b.className="set";b.setAttribute("aria-pressed",done.has(id));
    b.innerHTML=`<span class="box"></span><span class="lbl"></span>`;
-   const lab=(ex.s.length>1?(ex.t.startsWith("Tri-set")||ex.t.startsWith("Superset")?"Tour ":"Série ")+(j+1):"")+(summary(ex,v)?" — "+summary(ex,v):"");
+   const lab=(ns>1?(tour?"Tour ":"Série ")+(j+1):"")+(summary(ex,v)?" — "+summary(ex,v):"");
    b.querySelector(".lbl").textContent=lab;
    b.onclick=()=>{if(done.has(id))done.delete(id);else{if(!done.size||!s.date)s.date=TODAY;done.add(id);noteHist(cur,i)}s.done=[...done];saveSt();renderSalle()};
    blk.appendChild(b);
@@ -1344,6 +1356,10 @@ function renderSalle(){
    if(v.r!=null){const rs=ex.rs||1;ctl.appendChild(stepper(v.r+" "+(ex.u||"reps"),()=>{v.r=Math.max(rs,v.r-rs);setVal(cur,i,j,v)},()=>{v.r=Math.min(ex.u==="s"?300:ex.u==="m"?200:ex.u?120:60,v.r+rs);setVal(cur,i,j,v)}))}
    if(ctl.children.length)blk.appendChild(ctl);
    sec.appendChild(blk)});
+  if(ex0!==CARDIO){const ad=document.createElement("div");ad.className="optrow setadd";
+   const pl=document.createElement("button");pl.type="button";pl.className="chipbtn";pl.textContent="+ Ajouter "+(tour?"un tour":"une série");pl.onclick=()=>addSet(cur,i);ad.appendChild(pl);
+   if(extraMap(cur)[i]){const mo=document.createElement("button");mo.type="button";mo.className="chipbtn";mo.textContent="Retirer "+(tour?"le tour ":"la série ")+ns;mo.onclick=()=>dropSet(cur,i);ad.appendChild(mo)}
+   sec.appendChild(ad)}
   list.appendChild(sec)});
  if(total>0&&doneN===total){
   const txt=sess.title+" — "+(s.date||TODAY).split("-").reverse().join("/")+"\n"+recapLines().join("\n");
@@ -1355,7 +1371,7 @@ function renderSalle(){
   rc.querySelector("#scopy").onclick=()=>{navigator.clipboard.writeText(txt).then(()=>{rc.querySelector("#smsg").textContent="Récap copié."}).catch(()=>{const r=document.createRange();r.selectNodeContents(rc.querySelector("pre"));const sel=getSelection();sel.removeAllRanges();sel.addRange(r);rc.querySelector("#smsg").textContent="Texte sélectionné : copie-le."})};
   list.prepend(rc)}
  const r=document.createElement("button");r.className="reset";r.textContent="Nouvelle séance (décoche tout, garde tes charges)";
- r.onclick=()=>{s.done=[];s.skip=null;s.pick=null;delete s.date;SAVE_MSG="";saveSt();renderSalle()};list.appendChild(r);
+ r.onclick=()=>{s.done=[];s.skip=null;s.pick=null;s.extra=null;delete s.date;SAVE_MSG="";saveSt();renderSalle()};list.appendChild(r);
  $("#sfill").style.width=(total?doneN/total*100:0)+"%";
  $("#scount").textContent=doneN+" / "+total+" séries";
  $("#sstatus").textContent=total>0&&doneN===total?"Séance terminée":"";
