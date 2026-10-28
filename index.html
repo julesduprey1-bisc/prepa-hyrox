@@ -199,7 +199,7 @@ details summary{cursor:pointer;color:var(--muted);font-size:14px;min-height:32px
 /* ===== Salle (checklists) ===== */
 #v-salle .shead{position:sticky;top:0;z-index:5;background:var(--bg);margin-inline:-16px;padding:8px 16px 10px;border-bottom:1px solid var(--line)}
 .stabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
-.stabs button{flex:1;min-width:22%;min-height:44px;border:2px solid var(--line);border-radius:10px;background:transparent;color:var(--ink);font:600 16px var(--font-d);cursor:pointer}
+.stabs button{flex:1;min-width:17%;min-height:44px;padding:0 4px;border:2px solid var(--line);border-radius:10px;background:transparent;color:var(--ink);font:600 15px var(--font-d);cursor:pointer;line-height:1.1}
 .stabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .sbar{height:10px;background:var(--line);border-radius:5px;margin-top:10px;overflow:hidden}
 .sbar span{display:block;height:100%;width:0;background:var(--plate);transition:width .25s}
@@ -379,7 +379,7 @@ const SLOT_NOM={run1:"EF de milieu de semaine",run2:"EF du samedi",run3:"EF long
 const NOTE_SLOT={0:"push",1:"box1",2:"pull",3:"box2",4:"legs",5:"run2",6:"run3"}; // notes du programme : jour d'origine → séance
 const TYPES={kine:{l:"Kiné",it:{k:"kine",t:"Kiné",lock:true}},box:{l:"Box",it:{k:"box",t:"Box HYROX",lock:true}},ef:{l:"EF",it:{k:"run",t:"EF"}},
  push:{l:"Push",it:{k:"muscu",salle:"push",t:"Push + abdos"}},pull:{l:"Pull",it:{k:"muscu",salle:"pull",t:"Pull + abdos"}},
- legs:{l:"Jambes",it:{k:"muscu",salle:"legs",t:"Jambes + épaules"}},marche:{l:"Marche",it:{k:"marche",t:"Marche"}}};
+ legs:{l:"Jambes",it:{k:"muscu",salle:"legs",t:"Jambes + épaules"}},full:{l:"Full body",it:{k:"muscu",salle:"full",t:"Full body",sub:"Tout le corps, environ 70'"}},marche:{l:"Marche",it:{k:"marche",t:"Marche"}}};
 const RANK={kine:0,muscu:1,run:2,marche:3,box:4,repos:9};
 let MODS=ld("prepa-modifs",{}),EDIT=null,CONFIRM=null,ADD=null,ADD_REC=false,DET=null;
 let PROG=ld("prepa-programme",[]),PROG_SRV=[];
@@ -473,8 +473,8 @@ function acts(){const m=new Map();
 let BOXKM=ld("prepa-boxkm",{}),BOXKM_SRV={};
 function kmWod(a){if(a.k!=="box")return 0;const v=BOXKM[a.id]??BOXKM_SRV[a.id];return v!=null?+v:(+a.kb||0)}
 function seanceDates(){return new Set(SEANCES.map(s=>s.date))}
-const SALLE_TYPE={push:"push",pull:"pull",legsA:"legs",legsB:"legs"};
-function typeSalle(n){n=(n||"").toLowerCase();if(/push/.test(n))return "push";if(/pull/.test(n))return "pull";if(/jambe|legs|squat|épaule|epaule/.test(n))return "legs";return null}
+const SALLE_TYPE={push:"push",pull:"pull",legsA:"legs",legsB:"legs",full:"full"};
+function typeSalle(n){n=(n||"").toLowerCase();if(/full\s*body|fullbody|corps entier/.test(n))return "full";if(/push/.test(n))return "push";if(/pull/.test(n))return "pull";if(/jambe|legs|squat|épaule|epaule/.test(n))return "legs";return null}
 /* Une activité Strava ne valide que la séance du même type : Push / Pull / Jambes (titre lu par la mise à jour de nuit).
    Titre générique (« Entraînement aux poids ») : elle compte pour la séance de salle du jour. */
 function matchAct(a,date,it){if(a.d!==date||a.k!==it.k)return false;if(it.k!=="muscu"||!it.salle)return true;
@@ -523,7 +523,7 @@ function charge(A,d){let a7=0,a28=0;for(let i=0;i<28;i++){const x=dayRE(A,addD(d
  const hab=a28/4,base=Math.max(hab,CH_PLANCHER);
  return {date:d,jour:dayRE(A,d),veille:dayRE(A,addD(d,-1)),a7,hab:Math.round(hab),base:Math.round(base),ratio:Math.round(a7/base*100)/100}}
 function etatRatio(r){return r>1.5?["rouge","Trop vite"]:r>1.3?["orange","En hausse"]:r<0.8?["vert","Basse"]:["vert","Zone utile"]}
-function conseilSeance(it,niv){const legs=it.salle==="legs";
+function conseilSeance(it,niv){const legs=it.salle==="legs"||it.salle==="full";
  if(niv==="rouge"){if(it.k==="box")return "RPE 6 max, sans chercher le score";if(it.k==="run")return "garde la durée, FC 130–135 seulement";if(legs)return "−20 % sur les charges, aucune série à l'échec";if(it.k==="muscu")return "haut du corps OK, saute la marche inclinée"}
  if(niv==="orange"){if(it.k==="box")return "RPE 7, pas de max sur les stations";if(it.k==="run")return "telle que prévue, plafond 140 strict";if(legs)return "RPE 7 max, pas d'échec"}
  return ""}
@@ -717,7 +717,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis, séances déplacées, annulées ou ajoutées des 7 derniers jours et ta semaine type, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 22 · 28/10</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 23 · 28/10</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -1096,6 +1096,16 @@ const S={
   {g:"quadris-iso",k:"leg-extension",t:"Leg extension",rest:"1'",h:"Chiffre affiché sur la machine. Si le genou proteste, limite la fin d'extension.",l:[L("",5)],s:rep([40],12,3)},
   {g:"mollets",k:"mollets-unilat",t:"Montées de mollets unilatérales",rest:"45\"",h:"Reps par jambe, lent.",l:[],s:rep([],10,3)},
   CARDIO,
+  ABS]},
+ full:{name:"Full body",title:"Full body — tout le corps",ex:[
+  {g:"quadris",k:"goblet",t:"Squat goblet",rest:"2'",h:"Un haltère contre la poitrine, charge de l'haltère. Descente en 2 s, genoux dans l'axe des pieds, talons au sol. Premier exercice : une série légère d'échauffement avant.",l:[L("",2)],s:rep([28],10,3)},
+  {g:"pecs",k:"couche-halteres",t:"Développé couché haltères",rest:"2'",h:"Charge par haltère. Omoplates serrées, garde 2 reps en réserve.",l:[L("",2)],s:[[[30],10],[[32],8],[[32],8]]},
+  {g:"dos-epaisseur",k:"rowing-incline",t:"Rowing haltères banc incliné",rest:"1'30",h:"Allongé face au banc à 30° : rien sur le bas du dos. Charge par haltère, coudes vers les hanches.",l:[L("",2)],s:rep([26],10,3)},
+  {g:"fessiers",k:"hip-thrust",t:"Hip thrust",rest:"1'30",h:"Poids total, barre comprise. Pause 1 s en haut, menton rentré, sans cambrer.",l:[L("",10)],s:rep([60],10,3)},
+  {g:"dos-largeur",k:"tirage-vertical",t:"Tirage vertical",rest:"1'30",h:"Chiffre de la colonne, prise large, tire vers le haut de la poitrine.",l:[L("",5)],s:rep([55],10,3)},
+  {g:"epaules",k:"dev-halteres",t:"Développé haltères assis",rest:"1'30",h:"Charge par haltère, dossier droit, gainé.",l:[L("",2)],s:rep([18],10,3)},
+  {g:"fentes",k:"fentes-arriere",t:"Fentes arrière",rest:"1'30",h:"Charge par haltère, reps par jambe. Le pas en arrière ménage le genou.",l:[L("",2)],s:rep([14],8,3)},
+  {g:"grip",k:"farmer-carry",t:"Farmer carry",rest:"1'30",h:"Charge par haltère. Pas courts et rapides, épaules basses, buste droit : la station HYROX et ton grip.",l:[L("",2)],u:"m",rs:10,s:rep([28],40,3)},
   ABS]}
 };
 let st=ld("salle-v4",null);
@@ -1236,7 +1246,7 @@ function renderSalle(){
    ex.l.forEach((l,m)=>ctl.appendChild(stepper((l.n?l.n+" ":"")+fmtK(v.kg[m])+" kg",
     ()=>{v.kg[m]=Math.max(0,+(v.kg[m]-l.k).toFixed(1));setVal(cur,i,j,v)},
     ()=>{v.kg[m]=+(v.kg[m]+l.k).toFixed(1);setVal(cur,i,j,v)})));
-   if(v.r!=null){const rs=ex.rs||1;ctl.appendChild(stepper(v.r+" "+(ex.u||"reps"),()=>{v.r=Math.max(rs,v.r-rs);setVal(cur,i,j,v)},()=>{v.r=Math.min(ex.u==="s"?300:ex.u?120:60,v.r+rs);setVal(cur,i,j,v)}))}
+   if(v.r!=null){const rs=ex.rs||1;ctl.appendChild(stepper(v.r+" "+(ex.u||"reps"),()=>{v.r=Math.max(rs,v.r-rs);setVal(cur,i,j,v)},()=>{v.r=Math.min(ex.u==="s"?300:ex.u==="m"?200:ex.u?120:60,v.r+rs);setVal(cur,i,j,v)}))}
    if(ctl.children.length)blk.appendChild(ctl);
    sec.appendChild(blk)});
   list.appendChild(sec)});

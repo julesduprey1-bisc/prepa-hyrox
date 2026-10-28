@@ -38,6 +38,8 @@ def salle(a):
     if (a.get("sport_type") or "") not in ("WeightTraining", "Workout"):
         return None
     n = (a.get("name") or "").lower()
+    if re.search(r"full\s*body|fullbody|corps entier", n):
+        return "full"
     if "push" in n:
         return "push"
     if "pull" in n:
