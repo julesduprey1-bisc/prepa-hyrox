@@ -7,7 +7,9 @@ streams.json : réponse « get_activity_streams » (time, distance, heart_rate),
                seulement si le run n'a qu'un tour.
 Bloc principal = échauffement et retour au calme exclus :
   - plusieurs tours : on retire le premier s'il fait 15 min ou moins et le dernier
-    s'il fait 10 min ou moins, puis on garde les tours qui restent ;
+    s'il fait 10 min ou moins, puis on garde les tours qui restent ; s'il reste un vrai
+    bloc (10 min ou plus), les tours de moins de 3 min (lignes droites et leurs
+    récupérations, séance découpée sur la montre depuis le 28/10) sont écartés ;
   - un seul tour : on retire les 5 premières et les 3 dernières minutes des streams.
 Indice = vitesse (m/s) ÷ FC moyenne × 1000.
 """
@@ -32,6 +34,8 @@ def bloc_tours(laps):
             laps = [a]
         elif a["moving_time"] <= 900 and a["moving_time"] < b["moving_time"]:
             laps = [b]
+    if any(l["moving_time"] >= 600 for l in laps):
+        laps = [l for l in laps if l["moving_time"] >= 180]
     if not laps or any(l.get("avg_hr") is None for l in laps):
         return None
     t = sum(l["moving_time"] for l in laps)

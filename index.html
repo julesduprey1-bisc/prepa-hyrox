@@ -242,6 +242,16 @@ button.set[aria-pressed="true"] .lbl{text-decoration:line-through}
 .step.sm button{width:34px;min-height:36px;font-size:19px}
 .step.sm span{min-width:62px;font-size:15px}
 .chart .bar.wod{fill:var(--wod)}
+.rundet{display:flex;flex-direction:column;gap:8px;margin-top:6px;padding:10px 12px;border-radius:10px;background:var(--soft)}
+.rundet p{margin:0}
+.etapes{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.etapes li b{display:block;font-size:15px}
+.etapes li span{display:block;color:var(--muted);font-size:14px;line-height:1.4}
+.rundet details summary{font-weight:600;color:var(--ink);list-style:none}
+.rundet details summary::-webkit-details-marker{display:none}
+.rundet details summary::before{content:"▸";margin-right:8px}
+.rundet details[open] summary::before{content:"▾"}
+.rundet details[open]{display:flex;flex-direction:column;gap:8px}
 .tpl{display:flex;flex-direction:column}
 .tplrow{display:grid;grid-template-columns:44px 1fr;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:15px}
 .tplrow .d{font:600 13px var(--font-b);letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding-top:2px}
@@ -371,7 +381,7 @@ const TYPES={kine:{l:"Kiné",it:{k:"kine",t:"Kiné",lock:true}},box:{l:"Box",it:
  push:{l:"Push",it:{k:"muscu",salle:"push",t:"Push + abdos"}},pull:{l:"Pull",it:{k:"muscu",salle:"pull",t:"Pull + abdos"}},
  legs:{l:"Jambes",it:{k:"muscu",salle:"legs",t:"Jambes + épaules"}},marche:{l:"Marche",it:{k:"marche",t:"Marche"}}};
 const RANK={kine:0,muscu:1,run:2,marche:3,box:4,repos:9};
-let MODS=ld("prepa-modifs",{}),EDIT=null,CONFIRM=null,ADD=null,ADD_REC=false;
+let MODS=ld("prepa-modifs",{}),EDIT=null,CONFIRM=null,ADD=null,ADD_REC=false,DET=null;
 let PROG=ld("prepa-programme",[]),PROG_SRV=[];
 const KCACHE=new Map();
 /* 27/10 : anciennes clés « date|n° de la séance dans le jour » (kiné : « date|kine ») → « lundi|séance » */
@@ -425,7 +435,7 @@ function progDiff(slots){const o=new Map(SLOTS0.map(s=>[s.id,s])),out=[];
 function kineCtx(date){if(KCACHE.has(date))return KCACHE.get(date);let r={kine:false,salle:false};const w=weekOf(date);
  if(w){const its=effDays(w).find(x=>x.date===date).items.filter(x=>!x.cancel);r={kine:its.some(x=>x.k==="kine"),salle:its.some(x=>x.k==="muscu")}}
  KCACHE.set(date,r);return r}
-function notifLine(x){let s=x.t;if(x.k==="run")s+=" · FC 130–140, plafond 142";if(x.k==="box")s+=" (fixe)";if(x.k==="kine"&&x.h)s+=" · "+x.h;if(x.moved)s+=` · déplacée du ${dm(x.moved)}`;if(x.note)s+=" — "+x.note;return s}
+function notifLine(x){let s=x.t;if(x.k==="run")s+=" · "+runShort(x)+", plafond 142";if(x.k==="box")s+=" (fixe)";if(x.k==="kine"&&x.h)s+=" · "+x.h;if(x.moved)s+=` · déplacée du ${dm(x.moved)}`;if(x.note)s+=" — "+x.note;return s}
 function writeNotif(){if(!("caches" in window))return;const map={};
  WEEKS.forEach(w=>effDays(w).forEach((d,i)=>{const its=d.items.filter(x=>!x.cancel&&x.k!=="repos");
   map[d.date]={title:`${JOURSL[i][0].toUpperCase()+JOURSL[i].slice(1)} ${dm(d.date)} · S${w.s}`,body:its.length?its.map(notifLine).join("\n"):"Repos ou marche libre."}}));
@@ -567,6 +577,45 @@ function chargeBlock(A){
 /* ================= Vue Semaine ================= */
 let WI=(()=>{const i=WEEKS.findIndex(w=>TODAY>=w.start&&TODAY<=addD(w.start,6));return i>=0?i:(TODAY<WEEKS[0].start?0:WEEKS.length-1)})();
 let FORME=null,SYMPT=false,NOTE_DRAFT="",RESS_MSG="";
+/* ===== Séance de course détaillée et réglage de l'Apple Watch (demande de Jules, 28/10) =====
+   Découpage échauffement / bloc / lignes droites / retour au calme = tours sur Strava :
+   l'indice allure ↔ FC se calcule sur le bloc seulement (outils/indice_ef.py). */
+function lastEF(){const P=((EF&&EF.points)||[]).filter(p=>p.zone==="EF").sort((a,b)=>a.d.localeCompare(b.d));return P[P.length-1]||null}
+function allureAt(ind,fc){const s=Math.round(1e6/(ind*fc));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")}
+function runPlan(it,niv){
+ const r=lastEF(),leger=niv==="rouge";
+ if(it.ref)return {but:"Mesurer ton efficacité aérobie dans des conditions répétables : parcours plat, sans vent, à la même heure si possible.",
+  etapes:[["Échauffement","10'","progressif : du footing très lent jusqu'à ton allure EF, la FC monte vers 130."],
+   ["Bloc de référence","30'","FC tenue à 135 ± 3, sans regarder l'allure. Au-dessus de 138 : ralentis ; sous 132 : relance un peu."],
+   ["Retour au calme","5'","footing très lent."]],
+  montre:[["Échauffement","Durée 10 min",""],["Travail","Durée 30 min","cible Fréquence cardiaque, plage 132–138"],["Retour au calme","Durée 5 min",""]],
+  titre:"EF référence 30' 135",apres:"Je calcule l'indice sur les 30' du bloc seulement : c'est ton point de comparaison, garde les mêmes conditions à chaque fois."};
+ const T=it.min||30,main=T-5,fc=leger?[130,135]:[130,140],cap=leger?138:142,n=leger?4:6;
+ const rep=r?` Allure attendue ≈ ${allureAt(r.ind,fc[1])}–${allureAt(r.ind,fc[0])}/km, d'après ton indice du ${dm(r.d)} (${fr(r.ind,2)}) ; fatigue, chaleur ou vent la ralentissent, c'est normal.`:"";
+ const etapes=[["Échauffement","5'","très facile, plus lent que ton allure EF : laisse la FC monter doucement (sous 130, c'est normal)."],
+  ["Bloc EF",main+"'",`FC ${fc[0]}–${fc[1]}, plafond ${cap}. Au-dessus de ${fc[1]} : ralentis ; au-dessus de ${cap} : 30 s de marche, puis repars. Pas courts et légers, tu dois pouvoir parler en phrases.${rep}`]];
+ const montre=[["Échauffement","Durée 5 min",""],["Travail",`Durée ${main} min`,`cible Fréquence cardiaque, plage ${fc[0]}–${fc[1]}`]];
+ if(it.ld){
+  etapes.push(["Lignes droites",`${n} × 15"`,`accélération progressive sur 15 s jusqu'à ~${leger?80:85} % de ta vitesse max (vite mais relâché, jamais un sprint), puis 1'15 de marche. Sur du plat, terrain souple si possible ; une douleur au tibia ou au genou, tu arrêtes.`]);
+  etapes.push(["Retour au calme","3'","footing très lent."]);
+  montre.push([`Répétition × ${n}`,"Travail : Durée 15 s, puis Récupération : Durée 1 min 15","sans cible"],["Retour au calme","Durée 3 min",""])}
+ else{etapes.push(["Fin","2–3'","de marche avant d'arrêter la montre."]);montre.push(["Retour au calme","Libre","tu arrêtes après la marche"])}
+ const titre=`EF ${T}'${it.ld?` + ${n} LD`:""} ${fc[0]}-${fc[1]}`;
+ return {but:(it.sub||it.long?"Sortie la plus longue de la semaine : endurance de base et solidité des tibias, toujours à FC basse.":"Endurance fondamentale : construire la base aérobie sans accumuler de fatigue.")+(it.ld?" Les lignes droites relancent la foulée sans fatiguer.":""),
+  etapes,montre,titre,apres:`Je calcule ton indice sur le bloc EF seulement (échauffement${it.ld?" et lignes droites":""} exclus) : c'est à ça que sert le découpage.`}}
+function runDetailHTML(it,date){
+ const niv=date===TODAY?conseil(TODAY).niv:null,p=runPlan(it,niv);
+ return `<div class="rundet">
+  <p class="small"><strong>But :</strong> ${esc(p.but)}</p>
+  ${niv==="rouge"&&!it.ref?`<p class="small"><strong>Aujourd'hui on allège :</strong> plage 130–135${it.ld?" et 4 lignes droites à 80 %":""}, déjà pris en compte ci-dessous.</p>`:""}
+  <ol class="etapes">${p.etapes.map(([t,d,x])=>`<li><b>${esc(t)} · ${esc(d)}</b><span>${esc(x)}</span></li>`).join("")}</ol>
+  <details class="montre"><summary>Régler la montre</summary>
+   <p class="small">Sur l'iPhone, app <b>Forme</b> › <b>Exercice</b> › <b>Course (plein air)</b> › <b>Personnalisé</b> › <b>+</b>. Nom : <b>${esc(p.titre)}</b></p>
+   <ol class="etapes">${p.montre.map(([t,r,c])=>`<li><b>${esc(t)}</b><span>${esc(r)}${c?" · "+esc(c):""}</span></li>`).join("")}</ol>
+   <p class="small muted">Enregistre : la séance arrive sur ta montre (Exercice › Course (plein air) › Personnalisé). La montre vibre quand ta FC sort de la plage. Créée directement sur la montre (Objectifs › Personnalisé › Ajouter), il n'y a pas de répétition automatique : chaque intervalle s'ajoute à la main.</p>
+  </details>
+  <p class="small"><strong>Après :</strong> titre Strava « ${esc(p.titre)} ». ${esc(p.apres)}</p></div>`}
+function runShort(it){if(it.ref)return "10' + 30' à FC 135 ± 3 + 5'";const T=it.min||30;return `5' + ${T-5}' à FC 130–140${it.ld?` + 6 × 15"`:""}`}
 function itemDetail(it){
  if(it.k==="run"){let s=EF_TXT;if(it.km)s+=` ≈ ${fr(it.km)} km.`;if(it.ld)s+=" "+LD_TXT;return s}
  if(it.k==="box")return "Verrouillé : on ne coupe jamais les deux box.";
@@ -587,7 +636,8 @@ function itemRow(d,it,isT,s,w){
  const chips=(it.moved?`<span class="chip moved">Déplacée du ${dm(it.moved)}</span>`:"")+(it.added?`<span class="chip moved">Ajoutée</span>`:"")+(it.k==="kine"?`<span class="chip lock">RDV</span>`:it.lock?`<span class="chip lock">Fixe</span>`:it.cut?`<span class="chip">Coupe ${it.cut}</span>`:"");
  let h=`<div class="it ${it.cancel?"cancel":""}"><div class="txt"><strong>${chips}${esc(it.t)}</strong>
   ${it.note&&!it.cancel?`<span class="small">${esc(it.note)}</span>`:""}${it.k==="kine"&&!it.cancel&&it.h?`<span class="muted small">${esc(it.h)}</span>`:""}${it.k==="run"&&!it.cancel?`<span class="muted small">${it.ld?"6 lignes droites · ":""}${it.ref?"Protocole de référence · ":""}FC 130–140</span>`:""}${s&&s[0]==="fait"?(re=>re?`<span class="muted small">Effort relatif ${re}</span>`:"")(acts().filter(a=>matchAct(a,d.date,it)).reduce((n,a)=>n+(+a.re||0),0)):""}${it.k==="box"&&s&&s[0]==="fait"?wodRow(acts().find(a=>matchAct(a,d.date,it))):""}
-  <span class="row" style="gap:14px">${it.salle&&!isT&&!it.cancel?`<button class="link" data-salle="${it.salle}">Checklist</button>`:""}${it.k!=="repos"?`<button class="link small-link" data-edit="${it.key}">${EDIT===it.key?"Fermer":"Modifier"}</button>`:""}</span></div>${s?`<span class="st ${s[0]}">${s[1]}</span>`:""}</div>`;
+  <span class="row" style="gap:14px">${it.salle&&!isT&&!it.cancel?`<button class="link" data-salle="${it.salle}">Checklist</button>`:""}${it.k==="run"&&!it.cancel?`<button class="link small-link" data-det="${it.key}">${DET===it.key?"Fermer le détail":"Détail"}</button>`:""}${it.k!=="repos"?`<button class="link small-link" data-edit="${it.key}">${EDIT===it.key?"Fermer":"Modifier"}</button>`:""}</span></div>${s?`<span class="st ${s[0]}">${s[1]}</span>`:""}</div>`;
+ if(DET===it.key)h+=runDetailHTML(it,d.date);
  if(EDIT===it.key)h+=editPanel(d,it,w);
  return h}
 function wodRow(a){if(!a)return "";const v=kmWod(a),src=BOXKM[a.id]!=null?"corrigé":BOXKM_SRV[a.id]!=null||a.kb?"lu sur Strava":"à renseigner";
@@ -634,8 +684,7 @@ function renderSemaine(){
  if(td){h+=`<div class="block"><span class="eyebrow">Aujourd'hui</span>${adjHTML(conseil(TODAY,A),"Ajustement du jour")}<div class="todo">${td.items.map(it=>{const s=statusOf(TODAY,it,A);
    const ret=A.filter(a=>matchAct(a,TODAY,it)).map(a=>[retourSeance(a,A),kmWod(a)?fr(kmWod(a))+" km courus":""].filter(Boolean).join(" · ")).filter(Boolean).join(" · ");
    return `<div class="card k-${it.k}"><div class="row between"><h3>${it.moved?`<span class="chip moved">Déplacée du ${dm(it.moved)}</span>`:it.added?`<span class="chip moved">Ajoutée</span>`:""}${esc(it.t)}</h3>${s?`<span class="st ${s[0]}">${s[1]}</span>`:""}</div>
-   ${it.note?`<p><strong>${esc(it.note)}</strong></p>`:""}${itemDetail(it)?`<p class="muted small">${esc(itemDetail(it))}</p>`:""}
-   ${it.ref?`<ol class="proto">${REF_PROTO.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`:""}
+   ${it.note?`<p><strong>${esc(it.note)}</strong></p>`:""}${it.k==="run"&&!it.cancel?runDetailHTML(it,TODAY):itemDetail(it)?`<p class="muted small">${esc(itemDetail(it))}</p>`:""}
    ${ret?`<p class="retour"><strong>Retour :</strong> ${esc(ret)}</p>`:""}
    ${it.salle?`<div><button class="btn" data-salle="${it.salle}">Ouvrir la checklist</button></div>`:""}</div>`}).join("")}</div></div>`;
   h+=chargeBlock(A)}
@@ -668,7 +717,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis, séances déplacées, annulées ou ajoutées des 7 derniers jours et ta semaine type, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 21 · 27/10</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 22 · 28/10</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -685,6 +734,7 @@ function renderSemaine(){
  el.querySelectorAll("[data-every]").forEach(b=>b.onclick=()=>{const id=b.dataset.every,day=+b.dataset.day,k=w.start+"|"+id;
   editProg(w.start,sl=>sl.map(x=>x.id===id?{...x,d:day}:x));if(MODS[k]&&MODS[k].s==="reporte"){delete MODS[k];saveMods()}
   EDIT=null;CONFIRM=null;renderSemaine()});
+ el.querySelectorAll("[data-det]").forEach(b=>b.onclick=()=>{DET=DET===b.dataset.det?null:b.dataset.det;renderSemaine()});
  el.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{delete MODS[b.dataset.del];EDIT=null;CONFIRM=null;saveMods();renderSemaine()});
  el.querySelectorAll("[data-unprog]").forEach(b=>b.onclick=()=>{CONFIRM="rm|"+b.dataset.unprog;renderSemaine()});
  el.querySelectorAll("[data-unprogok]").forEach(b=>b.onclick=()=>{const k=b.dataset.unprogok,id=k.split("|")[1];
