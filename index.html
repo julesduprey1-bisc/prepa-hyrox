@@ -753,7 +753,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis, séances déplacées, annulées ou ajoutées des 7 derniers jours et ta semaine type, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 35 · 28/10</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 36 · 28/10</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -1141,8 +1141,9 @@ const CAT={
 
 const rep=(kg,r,n)=>Array.from({length:n},()=>[kg,r]);
 const CARDIO={opt:true,g:"cardio",k:"marche",t:"Cardio : marche inclinée",rest:"aucun — effort continu",h:"45 à 60 min, FC 125–140. Pente 8–12 %, 5–5,5 km/h. Les jours où une EF est prévue, elle passe avant.",l:[],u:"min",rs:5,s:[[[],45]]};
-const ABS={opt:true,g:"abdos",k:"circuit",t:"Circuit abdos",rest:"1'30 entre les tours",h:"Zéro repos entre les exercices, 1'30 après chaque tour. Bas du dos toujours plaqué ou neutre : zéro sit-up, zéro crunch lesté.",
- list:["Crunch touche genou puis cheville — 20 (épaules qui décollent, bas du dos au sol)","Relevés de jambes — 15, bas du dos plaqué","Mason twist — 10 (5/côté) sans poids, pieds au sol, buste droit. Mieux : Pallof press 10/côté","Dead bug — 10 par côté, lent","Side bend — 10 par côté, haltère léger (12 kg max), sans pencher en avant","Gainage — planche 45 s, puis latéral 30 s par côté"],
+/* 28/10 (v36) : circuit abdos de Jules — planche, gainage latéral, hollow, dead bug ; 3 à 4 tours, 3 fois par semaine (fin de Push, Pull, Jambes) */
+const ABS={opt:true,g:"abdos",k:"circuit",t:"Circuit abdos",rest:"1' entre les tours",h:"Les 4 exercices à la suite sans repos, puis 1' de repos. 3 tours, 4 si tu es frais (+ Ajouter un tour). Bas du dos plaqué ou neutre du début à la fin. Quand tout passe facilement : +15 s sur chaque gainage.",
+ list:["Planche (gainage ventral) — 45 s : sur les avant-bras, corps aligné, fessiers et abdos serrés, bassin ni creusé ni en l'air","Gainage latéral — 30 s par côté : coude sous l'épaule, hanches hautes, corps bien aligné","Hollow (gainage creux) — 30 s : sur le dos, bas du dos plaqué au sol, épaules et jambes décollées, bras tendus vers l'arrière. Trop dur : genoux fléchis ou bras le long du corps","Dead bug — 10 par côté, lentement : bas du dos plaqué, bras et jambe opposés qui s'allongent, souffle en allongeant"],
  l:[],s:[[[],null],[[],null],[[],null]]};
 /* 28/10 (v32) : rowing bûcheron en 3 points (une main sur le banc, deux pieds au sol) dans la Pull et le Full body ; même clé « bucheron » → charges et historique gardés */
 const BUCHERON3={g:"dos-unilat",k:"bucheron",t:"Rowing bûcheron 3 points",rest:"1'30",h:"Poids d’un haltère, reps par bras, pas de repos entre les deux bras. 3 points d'appui : une main sur le banc, les deux pieds au sol écartés, genoux légèrement fléchis, buste presque parallèle au sol, dos neutre, hanches bien de face. Tire l'haltère vers la hanche, coude près du corps, sans tourner le buste. Si le bas du dos tire : genou sur le banc (dans la liste).",l:[L("",0.5)]};
@@ -1202,7 +1203,8 @@ const S={
   {...BUCHERON3,s:rep([30],10,3)},
   {g:"dos-epaisseur",k:"tirage-horizontal",t:"Rowing assis à la poulie",rest:"1'30",h:"Chiffre de la colonne. Buste droit, tire vers le nombril, omoplates serrées 1 s. Pressé : mets Non ici, le bûcheron a déjà travaillé le dos.",l:[L("",5)],s:rep([55],10,2)},
   {...LAT_DEG,s:rep([8,6,4],10,3)},
-  {g:"abdos",k:"gainage-fb",t:"Gainage",rest:"1'",h:"Planche sur les avant-bras, corps aligné, fessiers serrés.",l:[],u:"s",rs:5,s:rep([],40,3)}]},
+  {g:"abdos",k:"gainage-fb",t:"Gainage",rest:"1'",h:"Planche sur les avant-bras, corps aligné, fessiers serrés. Si tu fais le circuit abdos juste après : mets Non ici, la planche y est déjà.",l:[],u:"s",rs:5,s:rep([],40,3)},
+  {...ABS,off:true}]},
  fullpdc:{name:"Sans salle",title:"Full body sans salle — poids du corps",ex:[
   {g:"pdc-jambes",k:"air-squat",t:"Squats poids du corps",rest:"45\"",h:"Descends à la parallèle, talons au sol, genoux dans l'axe.",l:[],s:rep([],20,4)},
   {g:"pdc-pecs",k:"pompes",t:"Pompes",rest:"45\"",h:"Corps gainé, poitrine jusqu'au sol. Quand ça casse, termine la série sur les genoux.",l:[],s:rep([],15,4)},
@@ -1456,7 +1458,7 @@ function renderSalle(){
    if(ex0===CARDIO&&efToday()&&!(i in skipMap(cur))){const n=document.createElement("span");n.className="small muted";n.textContent="Non par défaut : EF prévue aujourd'hui.";row.appendChild(n)}
    (sec.querySelector(".pickrow")||sec.querySelector("h2")).after(row);
    if(!live[i]){const n=document.createElement("p");n.className="small muted";n.textContent="Pas fait aujourd'hui : ne compte pas dans la séance.";sec.appendChild(n);userRow(sec,i,ex0);list.appendChild(sec);return}}
-  const tour=ex.t.startsWith("Tri-set")||ex.t.startsWith("Superset");
+  const tour=ex.t.startsWith("Tri-set")||ex.t.startsWith("Superset")||!!ex.list;
   idx(i).forEach(j=>{
    const id=i+"-"+j,v=val(cur,i,j),blk=document.createElement("div");blk.className="setblk";
    const b=document.createElement("button");b.className="set";b.setAttribute("aria-pressed",done.has(id));
