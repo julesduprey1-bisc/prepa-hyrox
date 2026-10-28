@@ -379,7 +379,7 @@ const SLOT_NOM={run1:"EF de milieu de semaine",run2:"EF du samedi",run3:"EF long
 const NOTE_SLOT={0:"push",1:"box1",2:"pull",3:"box2",4:"legs",5:"run2",6:"run3"}; // notes du programme : jour d'origine → séance
 const TYPES={kine:{l:"Kiné",it:{k:"kine",t:"Kiné",lock:true}},box:{l:"Box",it:{k:"box",t:"Box HYROX",lock:true}},ef:{l:"EF",it:{k:"run",t:"EF"}},
  push:{l:"Push",it:{k:"muscu",salle:"push",t:"Push + abdos"}},pull:{l:"Pull",it:{k:"muscu",salle:"pull",t:"Pull + abdos"}},
- legs:{l:"Jambes",it:{k:"muscu",salle:"legs",t:"Jambes + épaules"}},full:{l:"Full body salle",it:{k:"muscu",salle:"full",t:"Full body",sub:"En salle, tout le corps, environ 60'"}},fullpdc:{l:"Full body sans salle",it:{k:"muscu",salle:"fullpdc",t:"Full body sans salle",sub:"Poids du corps, environ 40'"}},marche:{l:"Marche",it:{k:"marche",t:"Marche"}}};
+ legs:{l:"Jambes",it:{k:"muscu",salle:"legs",t:"Jambes + épaules"}},full:{l:"Full body salle",it:{k:"muscu",salle:"full",t:"Full body",sub:"En salle, tout le corps, environ 65'"}},fullpdc:{l:"Full body sans salle",it:{k:"muscu",salle:"fullpdc",t:"Full body sans salle",sub:"Poids du corps, environ 40'"}},marche:{l:"Marche",it:{k:"marche",t:"Marche"}}};
 const RANK={kine:0,muscu:1,run:2,marche:3,box:4,repos:9};
 let MODS=ld("prepa-modifs",{}),EDIT=null,CONFIRM=null,ADD=null,ADD_REC=false,DET=null;
 let PROG=ld("prepa-programme",[]),PROG_SRV=[];
@@ -742,7 +742,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis, séances déplacées, annulées ou ajoutées des 7 derniers jours et ta semaine type, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 29 · 28/10</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 30 · 28/10</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -1179,8 +1179,9 @@ const S={
   {g:"pecs",k:"couche-halteres",t:"Développé couché haltères",rest:"2'",h:"Charge par haltère. Omoplates serrées, garde 2 reps en réserve. Chest press machine dans la liste.",l:[L("",2)],s:[[[30],10],[[32],8],[[32],8]]},
   {g:"souleve",k:"sdt",t:"Soulevé de terre",rest:"2'30",h:"Poids total, barre comprise. Barre contre les tibias, dos neutre, pousse le sol avec les jambes ; 2 séries d'échauffement avant. Commence léger : si le bas du dos tire, passe au trap bar ou au hip thrust (dans la liste).",l:[L("",5)],s:rep([70],8,3)},
   {g:"dos-largeur",k:"tirage-vertical",t:"Tirage vertical",rest:"1'30",h:"Chiffre de la colonne, prise large, tire vers le haut de la poitrine.",l:[L("",5)],s:rep([55],10,3)},
+  {g:"epaules",k:"push-press-technogym",t:"Push press machine Technogym",rest:"1'30",h:"Machine à disques : charge = disques chargés sur chaque bras (les deux bras pareil). Une série = 10 bras droit, 10 bras gauche, puis 10 à deux bras : 30 reps, à saisir au total. Dos collé au dossier, poignées à hauteur d'épaules, pousse sans verrouiller les coudes, descente en 2 s. Les 10 à deux bras sont les plus durs : prends une charge qui t'y laisse 1 à 2 reps en réserve.",l:[L("",2.5)],s:rep([10],30,2)},
   {g:"dos-epaisseur",k:"tirage-horizontal",t:"Rowing assis à la poulie",rest:"1'30",h:"Chiffre de la colonne. Buste droit, tire vers le nombril, omoplates serrées 1 s.",l:[L("",5)],s:rep([55],10,2)},
-  {g:"epaules",k:"laterales",t:"Élévations latérales",rest:"1'",h:"Charge par haltère, coudes légèrement fléchis, jusqu'à hauteur d'épaules, descente lente.",l:[L("",1)],s:rep([8],15,2)},
+  {g:"epaules",k:"laterales",t:"Élévations latérales",rest:"1'",h:"Charge par haltère, coudes légèrement fléchis, jusqu'à hauteur d'épaules, descente lente. Pressé : mets Non ici, la push press machine a déjà travaillé les épaules.",l:[L("",1)],s:rep([8],15,2)},
   {g:"abdos",k:"gainage-fb",t:"Gainage",rest:"1'",h:"Planche sur les avant-bras, corps aligné, fessiers serrés.",l:[],u:"s",rs:5,s:rep([],40,3)}]},
  fullpdc:{name:"Sans salle",title:"Full body sans salle — poids du corps",ex:[
   {g:"pdc-jambes",k:"air-squat",t:"Squats poids du corps",rest:"45\"",h:"Descends à la parallèle, talons au sol, genoux dans l'axe.",l:[],s:rep([],20,4)},
@@ -1225,6 +1226,8 @@ function remapSeance(id,map){const x=st[id];if(!x)return;const mv=k=>map[+k];con
  for(const d in (x.hist||{})){const m={};for(const k in x.hist[d])if(mv(k)!=null)m[mv(k)]=x.hist[d][k];x.hist[d]=m}}
 if(!st.fullV26){remapSeance("full",{0:0,1:1,2:2,3:3,5:4,7:5,8:6});remapSeance("fullpdc",{0:0,1:1,2:2,3:3,4:4,8:5,10:6});st.fullV26=true;sv("salle-v4",st)}
 if(!st.fullV27){remapSeance("full",{1:2});st.fullV27=true;sv("salle-v4",st)}
+/* 28/10 (v30) : push press machine Technogym insérée en 6e position du Full body → saisies décalées à partir du rowing */
+if(!st.fullV30){remapSeance("full",{0:0,1:1,2:2,3:3,4:4,5:6,6:7,7:8});st.fullV30=true;sv("salle-v4",st)}
 if(!st.pushV13){const P=st.push,sh=k=>{const i=+k;return i>=6?i+1:i};
  const nv={};for(const k in (P.val||{}))nv[sh(k)]=P.val[k];P.val=nv;
  P.done=(P.done||[]).map(x=>{const [i,j]=String(x).split("-");return sh(i)+"-"+j});
