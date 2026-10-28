@@ -199,7 +199,7 @@ details summary{cursor:pointer;color:var(--muted);font-size:14px;min-height:32px
 /* ===== Salle (checklists) ===== */
 #v-salle .shead{position:sticky;top:0;z-index:5;background:var(--bg);margin-inline:-16px;padding:8px 16px 10px;border-bottom:1px solid var(--line)}
 .stabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
-.stabs button{flex:1;min-width:17%;min-height:44px;padding:0 4px;border:2px solid var(--line);border-radius:10px;background:transparent;color:var(--ink);font:600 15px var(--font-d);cursor:pointer;line-height:1.1}
+.stabs button{flex:1;min-width:30%;min-height:44px;padding:0 4px;border:2px solid var(--line);border-radius:10px;background:transparent;color:var(--ink);font:600 15px var(--font-d);cursor:pointer;line-height:1.1}
 .stabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .sbar{height:10px;background:var(--line);border-radius:5px;margin-top:10px;overflow:hidden}
 .sbar span{display:block;height:100%;width:0;background:var(--plate);transition:width .25s}
@@ -379,7 +379,7 @@ const SLOT_NOM={run1:"EF de milieu de semaine",run2:"EF du samedi",run3:"EF long
 const NOTE_SLOT={0:"push",1:"box1",2:"pull",3:"box2",4:"legs",5:"run2",6:"run3"}; // notes du programme : jour d'origine → séance
 const TYPES={kine:{l:"Kiné",it:{k:"kine",t:"Kiné",lock:true}},box:{l:"Box",it:{k:"box",t:"Box HYROX",lock:true}},ef:{l:"EF",it:{k:"run",t:"EF"}},
  push:{l:"Push",it:{k:"muscu",salle:"push",t:"Push + abdos"}},pull:{l:"Pull",it:{k:"muscu",salle:"pull",t:"Pull + abdos"}},
- legs:{l:"Jambes",it:{k:"muscu",salle:"legs",t:"Jambes + épaules"}},full:{l:"Full body",it:{k:"muscu",salle:"full",t:"Full body",sub:"Tout le corps, environ 70'"}},marche:{l:"Marche",it:{k:"marche",t:"Marche"}}};
+ legs:{l:"Jambes",it:{k:"muscu",salle:"legs",t:"Jambes + épaules"}},full:{l:"Full body salle",it:{k:"muscu",salle:"full",t:"Full body",sub:"En salle, tout le corps, environ 70'"}},fullpdc:{l:"Full body sans salle",it:{k:"muscu",salle:"fullpdc",t:"Full body sans salle",sub:"Poids du corps, gros volume, environ 60'"}},marche:{l:"Marche",it:{k:"marche",t:"Marche"}}};
 const RANK={kine:0,muscu:1,run:2,marche:3,box:4,repos:9};
 let MODS=ld("prepa-modifs",{}),EDIT=null,CONFIRM=null,ADD=null,ADD_REC=false,DET=null;
 let PROG=ld("prepa-programme",[]),PROG_SRV=[];
@@ -413,12 +413,12 @@ function effDays(w){
  return D}
 /* Semaine où tout ne passera pas : Push / Pull / Jambes pas encore faits → un seul Full body le jour choisi.
    Les séances remplacées gardent leur ancien état (prev) pour pouvoir revenir en arrière. */
-function remplacerParFull(w,date){
+function remplacerParFull(w,date,kind){kind=kind==="fullpdc"?"fullpdc":"full";
  const A=acts(),D=effDays(w);
- let fk=Object.keys(MODS).find(k=>k.startsWith(w.start+"|+")&&MODS[k].s==="ajout"&&MODS[k].date===date&&MODS[k].it.salle==="full"&&!MODS[k].rp);
- if(!fk){fk=w.start+"|+"+Date.now().toString(36);MODS[fk]={s:"ajout",date,it:{...TYPES.full.it},le:TODAY}}
+ let fk=Object.keys(MODS).find(k=>k.startsWith(w.start+"|+")&&MODS[k].s==="ajout"&&MODS[k].date===date&&MODS[k].it.salle===kind&&!MODS[k].rp);
+ if(!fk){fk=w.start+"|+"+Date.now().toString(36);MODS[fk]={s:"ajout",date,it:{...TYPES[kind].it},le:TODAY}}
  const rep=[],noms=[];
- D.forEach(d=>d.items.forEach(it=>{if(it.k!=="muscu"||it.cancel||!it.salle||it.salle==="full"||it.key===fk)return;
+ D.forEach(d=>d.items.forEach(it=>{if(it.k!=="muscu"||it.cancel||!it.salle||grp(it.salle)==="full"||it.key===fk)return;
   if(doneOn(d.date,"muscu",A,it))return; // déjà faite : on la garde
   if(it.added){MODS[it.key].rp=fk}else MODS[it.key]={s:"remplace",par:fk,prev:MODS[it.key]||null,le:TODAY};
   rep.push(it.key);noms.push(it.t)}));
@@ -478,7 +478,7 @@ function kind(x){const t=x.t,n=x.n||"";
  if(t==="PhysicalTherapy"||/kin[ée]/i.test(n))return "kine";
  if(t==="WeightTraining"||t==="Workout"){
   if(x.d&&!(x.s||typeSalle(n))){const c=kineCtx(x.d);if(c.kine&&(!c.salle||(x.h>="09:45"&&x.h<="11:45")))return "kine"}
-  if(t==="WeightTraining")return "muscu"}
+  if(t==="WeightTraining"||x.s||typeSalle(n))return "muscu"}
  if(t==="Walk"||t==="Hike")return "marche";
  return "autre"}
 function acts(){const m=new Map();
@@ -491,14 +491,15 @@ function acts(){const m=new Map();
 let BOXKM=ld("prepa-boxkm",{}),BOXKM_SRV={};
 function kmWod(a){if(a.k!=="box")return 0;const v=BOXKM[a.id]??BOXKM_SRV[a.id];return v!=null?+v:(+a.kb||0)}
 function seanceDates(){return new Set(SEANCES.map(s=>s.date))}
-const SALLE_TYPE={push:"push",pull:"pull",legsA:"legs",legsB:"legs",full:"full"};
-function typeSalle(n){n=(n||"").toLowerCase();if(/full\s*body|fullbody|corps entier/.test(n))return "full";if(/push/.test(n))return "push";if(/pull/.test(n))return "pull";if(/jambe|legs|squat|épaule|epaule/.test(n))return "legs";return null}
+const SALLE_TYPE={push:"push",pull:"pull",legsA:"legs",legsB:"legs",full:"full",fullpdc:"full"};
+const grp=x=>x==="fullpdc"?"full":x; // les deux Full body (salle / sans salle) se valident l'un l'autre
+function typeSalle(n){n=(n||"").toLowerCase();if(/full\s*body|fullbody|corps entier|sans salle|poids du corps/.test(n))return "full";if(/push/.test(n))return "push";if(/pull/.test(n))return "pull";if(/jambe|legs|squat|épaule|epaule/.test(n))return "legs";return null}
 /* Une activité Strava ne valide que la séance du même type : Push / Pull / Jambes (titre lu par la mise à jour de nuit).
    Titre générique (« Entraînement aux poids ») : elle compte pour la séance de salle du jour. */
 function matchAct(a,date,it){if(a.d!==date||a.k!==it.k)return false;if(it.k!=="muscu"||!it.salle)return true;
- const t=a.s||typeSalle(a.n);return !t||t===it.salle}
+ const t=a.s||typeSalle(a.n);return !t||t===grp(it.salle)}
 function doneOn(date,k,A,it){it=it||{k};
- if(k==="muscu"&&SEANCES.some(x=>x.date===date&&(!it.salle||SALLE_TYPE[x.seance]===it.salle)))return true;
+ if(k==="muscu"&&SEANCES.some(x=>x.date===date&&(!it.salle||SALLE_TYPE[x.seance]===grp(it.salle))))return true;
  return A.some(a=>matchAct(a,date,it))}
 function weekStat(w,A){const e=addD(w.start,6);const inW=A.filter(a=>a.d>=w.start&&a.d<=e);
  const runs=inW.filter(a=>a.k==="run");const md=new Set(inW.filter(a=>a.k==="muscu").map(a=>a.d));
@@ -541,7 +542,7 @@ function charge(A,d){let a7=0,a28=0;for(let i=0;i<28;i++){const x=dayRE(A,addD(d
  const hab=a28/4,base=Math.max(hab,CH_PLANCHER);
  return {date:d,jour:dayRE(A,d),veille:dayRE(A,addD(d,-1)),a7,hab:Math.round(hab),base:Math.round(base),ratio:Math.round(a7/base*100)/100}}
 function etatRatio(r){return r>1.5?["rouge","Trop vite"]:r>1.3?["orange","En hausse"]:r<0.8?["vert","Basse"]:["vert","Zone utile"]}
-function conseilSeance(it,niv){const legs=it.salle==="legs"||it.salle==="full";
+function conseilSeance(it,niv){const legs=["legs","full"].includes(grp(it.salle));
  if(niv==="rouge"){if(it.k==="box")return "RPE 6 max, sans chercher le score";if(it.k==="run")return "garde la durée, FC 130–135 seulement";if(legs)return "−20 % sur les charges, aucune série à l'échec";if(it.k==="muscu")return "haut du corps OK, saute la marche inclinée"}
  if(niv==="orange"){if(it.k==="box")return "RPE 7, pas de max sur les stations";if(it.k==="run")return "telle que prévue, plafond 140 strict";if(legs)return "RPE 7 max, pas d'échec"}
  return ""}
@@ -654,7 +655,7 @@ function statusOf(date,it,A){
 function itemRow(d,it,isT,s,w){
  const chips=(it.moved?`<span class="chip moved">Déplacée du ${dm(it.moved)}</span>`:"")+(it.added?`<span class="chip moved">Ajoutée</span>`:"")+(it.k==="kine"?`<span class="chip lock">RDV</span>`:it.lock?`<span class="chip lock">Fixe</span>`:it.cut?`<span class="chip">Coupe ${it.cut}</span>`:"");
  let h=`<div class="it ${it.cancel?"cancel":""}"><div class="txt"><strong>${chips}${esc(it.t)}</strong>
-  ${it.note&&!it.cancel?`<span class="small">${esc(it.note)}</span>`:""}${it.replaced&&MODS[it.par]?`<span class="muted small">par le Full body du ${JOURSL[diff(w.start,MODS[it.par].date)]} ${dm(MODS[it.par].date)}</span>`:""}${it.k==="kine"&&!it.cancel&&it.h?`<span class="muted small">${esc(it.h)}</span>`:""}${it.k==="run"&&!it.cancel?`<span class="muted small">${it.ld?"6 lignes droites · ":""}${it.ref?"Protocole de référence · ":""}FC 130–140</span>`:""}${s&&s[0]==="fait"?(re=>re?`<span class="muted small">Effort relatif ${re}</span>`:"")(acts().filter(a=>matchAct(a,d.date,it)).reduce((n,a)=>n+(+a.re||0),0)):""}${it.k==="box"&&s&&s[0]==="fait"?wodRow(acts().find(a=>matchAct(a,d.date,it))):""}
+  ${it.note&&!it.cancel?`<span class="small">${esc(it.note)}</span>`:""}${it.replaced&&MODS[it.par]?`<span class="muted small">par le ${esc(MODS[it.par].it.t)} du ${JOURSL[diff(w.start,MODS[it.par].date)]} ${dm(MODS[it.par].date)}</span>`:""}${it.k==="kine"&&!it.cancel&&it.h?`<span class="muted small">${esc(it.h)}</span>`:""}${it.k==="run"&&!it.cancel?`<span class="muted small">${it.ld?"6 lignes droites · ":""}${it.ref?"Protocole de référence · ":""}FC 130–140</span>`:""}${s&&s[0]==="fait"?(re=>re?`<span class="muted small">Effort relatif ${re}</span>`:"")(acts().filter(a=>matchAct(a,d.date,it)).reduce((n,a)=>n+(+a.re||0),0)):""}${it.k==="box"&&s&&s[0]==="fait"?wodRow(acts().find(a=>matchAct(a,d.date,it))):""}
   <span class="row" style="gap:14px">${it.salle&&!isT&&!it.cancel?`<button class="link" data-salle="${it.salle}">Checklist</button>`:""}${it.k==="run"&&!it.cancel?`<button class="link small-link" data-det="${it.key}">${DET===it.key?"Fermer le détail":"Détail"}</button>`:""}${it.k!=="repos"?`<button class="link small-link" data-edit="${it.key}">${EDIT===it.key?"Fermer":"Modifier"}</button>`:""}</span></div>${s?`<span class="st ${s[0]}">${s[1]}</span>`:""}</div>`;
  if(DET===it.key)h+=runDetailHTML(it,d.date);
  if(EDIT===it.key)h+=editPanel(d,it,w);
@@ -663,7 +664,7 @@ function wodRow(a){if(!a)return "";const v=kmWod(a),src=BOXKM[a.id]!=null?"corri
  return `<span class="wodkm"><span class="muted small">Course dans le WOD${src?` (${src})`:""}</span><span class="step sm"><button type="button" data-bkm="${esc(a.id)}" data-dv="-0.2" aria-label="Moins 200 m">−</button><span>${fr(v)} km</span><button type="button" data-bkm="${esc(a.id)}" data-dv="0.2" aria-label="Plus 200 m">+</button></span></span>`}
 /* Modifier une séance : cette semaine (n'importe quel jour, même passé) ou chaque semaine (semaine type) */
 function editPanel(d,it,w){
- if(it.replaced)return `<div class="edit"><span class="small">Remplacée par le Full body${MODS[it.par]?` du ${JOURSL[diff(w.start,MODS[it.par].date)]} ${dm(MODS[it.par].date)}`:""}.</span><div class="chips"><button class="chipbtn" data-unrep="${it.key}">Remettre comme prévu</button></div></div>`;
+ if(it.replaced)return `<div class="edit"><span class="small">Remplacée par le ${MODS[it.par]?`${esc(MODS[it.par].it.t)} du ${JOURSL[diff(w.start,MODS[it.par].date)]} ${dm(MODS[it.par].date)}`:"Full body"}.</span><div class="chips"><button class="chipbtn" data-unrep="${it.key}">Remettre comme prévu</button></div></div>`;
  const days=[];for(let i=0;i<7;i++){const x=addD(w.start,i);if(x!==d.date)days.push(x)}
  const slot=it.added?null:slotsAt(w.start).find(x=>x.id===it.id),m=MODS[it.key];
  let h=`<div class="edit"><span class="small muted">${it.added?"La déplacer au :":"Cette semaine, la déplacer au :"}</span>
@@ -671,7 +672,7 @@ function editPanel(d,it,w){
  if(slot)h+=`<span class="small muted">Chaque semaine, dès la S${w.s} :</span>
   <div class="chips">${JOURS.map((j,i)=>`<button class="chipbtn" data-every="${it.id}" data-day="${i}" aria-pressed="${slot.d===i}"${slot.d===i?" disabled":""}>${j}</button>`).join("")}</div>`;
  h+=`<div class="chips">${it.added?`<button class="chipbtn danger" data-del="${it.key}">Supprimer</button>`:(it.cancel?"":`<button class="chipbtn danger" data-cancel="${it.key}">Annuler cette semaine</button>`)}${slot?`<button class="chipbtn danger" data-unprog="${it.key}">Retirer du programme</button>`:""}${m&&!it.added?`<button class="chipbtn" data-restore="${it.key}">Remettre comme prévu</button>`:""}</div>`;
- if(it.k==="muscu"&&!it.cancel&&it.salle&&it.salle!=="full")h+=`<span class="small muted">Semaine où tout ne passera pas : un seul Full body ${JOURSL[diff(w.start,d.date)]} remplace les Push, Pull et Jambes pas encore faits.</span><div class="chips"><button class="chipbtn" data-fullrep="${d.date}">Remplacer par un Full body</button></div>`;
+ if(it.k==="muscu"&&!it.cancel&&it.salle&&grp(it.salle)!=="full")h+=`<span class="small muted">Semaine où tout ne passera pas : un seul Full body ${JOURSL[diff(w.start,d.date)]} remplace les Push, Pull et Jambes pas encore faits.</span><div class="chips"><button class="chipbtn" data-fullrep="${d.date}" data-kind="full">Full body en salle</button><button class="chipbtn" data-fullrep="${d.date}" data-kind="fullpdc">Full body sans salle</button></div>`;
  if(it.fullrep)h+=`<span class="small muted">Supprimer ce Full body remet les séances qu'il remplaçait.</span>`;
  if(CONFIRM===it.key)h+=`<div class="alert warn">${it.k==="kine"?`<strong>Rendez-vous kiné</strong><p class="small">Si tu l'annules, recale-le avec ton kiné dans la semaine : il fait partie de la prépa.</p>`:`<strong>Séance fixe</strong><p class="small">Les box et les EF tiennent la prépa : déplace-la plutôt. L'objectif de la semaine reste le même.</p>`}<div><button class="chipbtn danger" data-cancelok="${it.key}">Annuler quand même</button></div></div>`;
  if(CONFIRM==="rm|"+it.key)h+=`<div class="alert warn"><strong>Retirer du programme</strong><p class="small">« ${esc(it.t)} » disparaît de toutes les semaines à partir de la S${w.s}.${it.lock?" C'est une séance fixe de la prépa : seulement si le programme change vraiment.":""}</p><div><button class="chipbtn danger" data-unprogok="${it.key}">Retirer</button></div></div>`;
@@ -681,7 +682,7 @@ function addPanel(w,date){const wd=diff(w.start,date);
   <div class="chips">${Object.entries(TYPES).map(([k,x])=>`<button class="chipbtn" data-addtype="${k}" data-date="${date}">${x.l}</button>`).join("")}</div>
   <label class="check"><input type="checkbox" id="addrec"${ADD_REC?" checked":""}> Chaque ${JOURSL[wd]}, à partir de la S${w.s}</label>
   <span class="small muted">Ou, si tout ne passera pas cette semaine :</span>
-  <div class="chips"><button class="chipbtn" data-fullrep="${date}">Full body à la place de la muscu de la semaine</button></div></div>`}
+  <div class="chips"><button class="chipbtn" data-fullrep="${date}" data-kind="full">Full body en salle à la place de la muscu</button><button class="chipbtn" data-fullrep="${date}" data-kind="fullpdc">Full body sans salle à la place de la muscu</button></div></div>`}
 /* Semaine type de la semaine affichée (les changements valent pour elle et les suivantes) */
 function progBlock(w){const S=slotsAt(w.start),diffs=progDiff(S);
  const rows=JOURS.map((j,i)=>{const its=S.filter(s=>s.d===i&&(!s.src||WEEKS.some(x=>x.start>=w.start&&x[s.src]))).sort((a,b)=>(RANK[a.k]??5)-(RANK[b.k]??5));
@@ -741,7 +742,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis, séances déplacées, annulées ou ajoutées des 7 derniers jours et ta semaine type, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 24 · 28/10</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 25 · 28/10</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -780,8 +781,8 @@ function renderSemaine(){
  el.querySelectorAll("[data-unrep]").forEach(b=>b.onclick=()=>{const k=b.dataset.unrep,m=MODS[k];
   if(m&&m.s==="remplace"){if(m.prev)MODS[k]=m.prev;else delete MODS[k]}else if(m&&m.s==="ajout")delete m.rp;
   EDIT=null;CONFIRM=null;saveMods();renderSemaine()});
- el.querySelectorAll("[data-fullrep]").forEach(b=>b.onclick=()=>{const dt=b.dataset.fullrep;remplacerParFull(w,dt);EDIT=null;ADD=null;ADD_REC=false;CONFIRM=null;
-  if(dt===TODAY){cur="full";sv("salle-tab",cur);sv("salle-tab-day",now.toDateString());renderSalle()}renderSemaine()});
+ el.querySelectorAll("[data-fullrep]").forEach(b=>b.onclick=()=>{const dt=b.dataset.fullrep,kd=b.dataset.kind==="fullpdc"?"fullpdc":"full";remplacerParFull(w,dt,kd);EDIT=null;ADD=null;ADD_REC=false;CONFIRM=null;
+  if(dt===TODAY){cur=kd;sv("salle-tab",cur);sv("salle-tab-day",now.toDateString());renderSalle()}renderSemaine()});
  const pe=$("#penable");if(pe)pe.onclick=enablePush;
  const ps=$("#pshare");if(ps)ps.onclick=sharePush;
  const pt=$("#ptest");if(pt)pt.onclick=testPush;
@@ -822,7 +823,7 @@ function coachText(){const from=addD(TODAY,-6);
  let t=`Prépa HYROX — mes saisies du ${dm(from)} au ${dm(TODAY)}\n`;
  t+="\nSéances salle :\n"+(se.length?se.map(s=>`- ${dm(s.date)} ${s.titre}\n`+(s.lignes||[]).map(l=>"   "+l).join("\n")).join("\n"):"- aucune");
  const mo=Object.entries(MODS).filter(([k])=>k.split("|")[0]>=monday(from)).map(([k,m])=>{const i=modInfo(k);if(!i)return null;
-  return [i.date,m.s==="ajout"?`- ${i.t} ajoutée le ${dm(m.date)}${m.rp&&MODS[m.rp]?" (remplacée par le full body du "+dm(MODS[m.rp].date)+")":""}${m.rep&&m.rep.length?" à la place de la muscu de la semaine":""}`:m.s==="annule"?`- ${i.t} du ${dm(i.date)} : annulée`:m.s==="remplace"?`- ${i.t} du ${dm(i.date)} : remplacée par le full body${MODS[m.par]?" du "+dm(MODS[m.par].date):""}`:`- ${i.t} du ${dm(i.date)} : déplacée au ${dm(m.to)}`]}).filter(Boolean).sort().map(x=>x[1]);
+  return [i.date,m.s==="ajout"?`- ${i.t} ajoutée le ${dm(m.date)}${m.rp&&MODS[m.rp]?" (remplacée par le "+MODS[m.rp].it.t.toLowerCase()+" du "+dm(MODS[m.rp].date)+")":""}${m.rep&&m.rep.length?" à la place de la muscu de la semaine":""}`:m.s==="annule"?`- ${i.t} du ${dm(i.date)} : annulée`:m.s==="remplace"?`- ${i.t} du ${dm(i.date)} : remplacée par ${MODS[m.par]?"le "+MODS[m.par].it.t.toLowerCase()+" du "+dm(MODS[m.par].date):"un full body"}`:`- ${i.t} du ${dm(i.date)} : déplacée au ${dm(m.to)}`]}).filter(Boolean).sort().map(x=>x[1]);
  t+="\n\nSéances déplacées / annulées / ajoutées :\n"+(mo.length?mo.join("\n"):"- aucune");
  const pv=PROG.map(v=>{const x=progDiff(v.slots);return `- à partir du ${dm(v.from)} : ${x.length?x.join(" ; "):"programme d'origine"}`});
  if(pv.length)t+="\n\nSemaine type modifiée :\n"+pv.join("\n");
@@ -1073,6 +1074,44 @@ const CAT={
   X("hip-thrust-machine","Hip thrust machine","Chiffre de la machine.",[L("",5)],[60],10),
   X("kickback-fessier","Kickback fessier poulie","Sangle à la cheville, dos droit, reps par jambe.",[L("",2.5)],[10],12),
   X("rdl","Soulevé de terre roumain","Poids total (barre ou haltères). Dos neutre, poussée de hanches.",[L("",5)],[50],10)],
+ "pdc-jambes":[
+  X("squat-sumo","Squat sumo","Pieds larges, pointes ouvertes, descente contrôlée.",[],[],25),
+  X("bulgare-chaise","Squat bulgare pied sur une chaise","Reps par jambe, buste droit.",[],[],12),
+  X("step-up-chaise","Step-up sur une chaise","Chaise stable calée contre un mur, reps par jambe.",[],[],12),
+  X("squat-pause","Squat avec pause","3 s de pause en bas à chaque rep.",[],[],15)],
+ "pdc-pecs":[
+  X("pompes-declinees","Pompes déclinées","Pieds sur une chaise : haut des pecs.",[],[],12),
+  X("pompes-larges","Pompes larges","Mains plus larges que les épaules.",[],[],15),
+  X("pompes-diamant","Pompes diamant","Mains en losange sous la poitrine : triceps.",[],[],10),
+  X("pompes-genoux","Pompes sur les genoux","Pour finir le volume quand les pompes classiques cassent.",[],[],20)],
+ "pdc-fentes":[
+  X("fentes-marchees-pdc","Fentes marchées","Reps = nombre de pas, comme en HYROX.",[],[],20),
+  X("fentes-laterales","Fentes latérales","Reps par côté, amplitude progressive (adducteurs).",[],[],10),
+  X("fentes-sac","Fentes avec sac à dos","Sac chargé (livres, bouteilles), reps au total.",[],[],20)],
+ "pdc-dos":[
+  X("tirage-serviette","Tirage serviette à une porte","Serviette autour des deux poignées d'une porte bien fermée, pieds contre la porte : tire le buste vers la porte.",[],[],15),
+  X("rowing-sac","Rowing sac à dos","Sac chargé, buste penché, dos neutre, tire vers le nombril.",[],[],15),
+  X("superman","Superman","Allongé sur le ventre, décolle bras et jambes, 2 s en haut.",[],[],15)],
+ "pdc-ischios":[
+  X("pont-2-jambes","Pont fessier","Pause 2 s en haut.",[],[],20),
+  X("nordic-pdc","Nordic curl","Pieds calés sous un canapé, descends le plus lentement possible.",[],[],5),
+  X("good-morning-sac","Good morning sac à dos","Sac contre la poitrine, dos neutre, charnière à la hanche.",[],[],15)],
+ "pdc-epaules":[
+  X("pike-sureleve","Pompes piquées pieds surélevés","Pieds sur une chaise : plus dur.",[],[],8),
+  X("shoulder-taps","Shoulder taps","En planche haute, touche l'épaule opposée sans bouger le bassin. Reps au total.",[],[],30)],
+ "pdc-triceps":[
+  X("pompes-diamant-t","Pompes diamant","Mains en losange sous la poitrine.",[],[],10),
+  X("extension-sol","Extension triceps au sol","En planche sur les avant-bras, pousse jusqu'aux mains, coudes serrés.",[],[],10)],
+ "pdc-iso":[
+  X("gainage-pdc","Gainage","Planche sur les avant-bras, corps aligné.",[],[],60,SEC),
+  X("fente-iso","Fente isométrique","Position basse de fente, durée par jambe.",[],[],30,SEC)],
+ "pdc-cardio":[
+  X("burpee-broad","Burpee broad jumps","Burpee puis saut en longueur, comme en HYROX.",[],[],8),
+  X("mountain","Mountain climbers","Reps au total, bassin bas.",[],[],40),
+  X("jumping-jacks","Jumping jacks","Reps au total.",[],[],50)],
+ "pdc-mollets":[
+  X("releveurs-pdc","Releveurs de pieds","Dos au mur, talons au sol, remonte les pointes de pieds : pour les tibias.",[],[],20),
+  X("mollets-2-jambes","Mollets deux jambes","Sur une marche, 1 s en haut, descente complète.",[],[],25)],
  "quadris-iso":[
   X("leg-ext-unilat","Leg extension unilatéral","Chiffre de la machine, reps par jambe.",[L("",2.5)],[20],12),
   X("spanish-squat","Spanish squat","Sangle derrière les genoux, buste droit : quadris sans forcer sur le tendon.",[],[],12),
@@ -1135,6 +1174,18 @@ const S={
   {g:"epaules",k:"dev-halteres",t:"Développé haltères assis",rest:"1'30",h:"Charge par haltère, dossier droit, gainé.",l:[L("",2)],s:rep([18],10,3)},
   {g:"fentes",k:"fentes-arriere",t:"Fentes arrière",rest:"1'30",h:"Charge par haltère, reps par jambe. Le pas en arrière ménage le genou.",l:[L("",2)],s:rep([14],8,3)},
   {g:"grip",k:"farmer-carry",t:"Farmer carry",rest:"1'30",h:"Charge par haltère. Pas courts et rapides, épaules basses, buste droit : la station HYROX et ton grip.",l:[L("",2)],u:"m",rs:10,s:rep([28],40,3)},
+  ABS]},
+ fullpdc:{name:"Sans salle",title:"Full body sans salle — poids du corps",ex:[
+  {g:"pdc-jambes",k:"air-squat",t:"Squats poids du corps",rest:"1'",h:"Descends à la parallèle, talons au sol, genoux dans l'axe. Dernière série : 2 s de pause en bas à chaque rep.",l:[],s:rep([],25,4)},
+  {g:"pdc-pecs",k:"pompes",t:"Pompes",rest:"1'",h:"Corps gainé, poitrine jusqu'au sol. Quand ça casse, termine la série sur les genoux.",l:[],s:rep([],15,5)},
+  {g:"pdc-fentes",k:"fentes-arriere-pdc",t:"Fentes arrière alternées",rest:"1'",h:"Reps au total (10 par jambe). Le pas en arrière ménage le genou ; le genou arrière frôle le sol.",l:[],s:rep([],20,4)},
+  {g:"pdc-dos",k:"rowing-table",t:"Rowing inversé sous une table",rest:"1'",h:"Table solide, allongé dessous, mains au bord, corps gainé : tire la poitrine vers la table. Sans table : tirage serviette à une porte (dans la liste).",l:[],s:rep([],12,4)},
+  {g:"pdc-ischios",k:"pont-unilat",t:"Pont fessier unilatéral",rest:"45\"",h:"Reps par jambe, pause 1 s en haut, bassin bien horizontal.",l:[],s:rep([],15,3)},
+  {g:"pdc-epaules",k:"pike",t:"Pompes piquées (pike)",rest:"1'",h:"Fesses hautes, corps en V, tête vers le sol entre les mains : épaules.",l:[],s:rep([],10,3)},
+  {g:"pdc-triceps",k:"dips-chaise",t:"Dips sur une chaise",rest:"1'",h:"Chaise calée contre un mur, coudes vers l'arrière, descends jusqu'à 90°.",l:[],s:rep([],15,3)},
+  {g:"pdc-iso",k:"chaise-murale",t:"Chaise contre un mur",rest:"1'",h:"Cuisses parallèles au sol, dos plaqué au mur.",l:[],u:"s",rs:5,s:rep([],60,3)},
+  {g:"pdc-cardio",k:"burpees",t:"Burpees",rest:"1'",h:"Rythme régulier, pas de sprint : poitrine au sol et petit saut, comme en HYROX.",l:[],s:rep([],10,5)},
+  {g:"pdc-mollets",k:"mollets-unilat-pdc",t:"Mollets unilatéraux",rest:"30\"",h:"Sur une marche, reps par jambe, descente lente : tibias et tendons.",l:[],s:rep([],20,3)},
   ABS]}
 };
 let st=ld("salle-v4",null);
