@@ -379,7 +379,7 @@ const SLOT_NOM={run1:"EF de milieu de semaine",run2:"EF du samedi",run3:"EF long
 const NOTE_SLOT={0:"push",1:"box1",2:"pull",3:"box2",4:"legs",5:"run2",6:"run3"}; // notes du programme : jour d'origine → séance
 const TYPES={kine:{l:"Kiné",it:{k:"kine",t:"Kiné",lock:true}},box:{l:"Box",it:{k:"box",t:"Box HYROX",lock:true}},ef:{l:"EF",it:{k:"run",t:"EF"}},
  push:{l:"Push",it:{k:"muscu",salle:"push",t:"Push + abdos"}},pull:{l:"Pull",it:{k:"muscu",salle:"pull",t:"Pull + abdos"}},
- legs:{l:"Jambes",it:{k:"muscu",salle:"legs",t:"Jambes + épaules"}},full:{l:"Full body salle",it:{k:"muscu",salle:"full",t:"Full body",sub:"En salle, tout le corps, environ 70'"}},fullpdc:{l:"Full body sans salle",it:{k:"muscu",salle:"fullpdc",t:"Full body sans salle",sub:"Poids du corps, environ 40'"}},marche:{l:"Marche",it:{k:"marche",t:"Marche"}}};
+ legs:{l:"Jambes",it:{k:"muscu",salle:"legs",t:"Jambes + épaules"}},full:{l:"Full body salle",it:{k:"muscu",salle:"full",t:"Full body",sub:"En salle, tout le corps, environ 75'"}},fullpdc:{l:"Full body sans salle",it:{k:"muscu",salle:"fullpdc",t:"Full body sans salle",sub:"Poids du corps, environ 40'"}},marche:{l:"Marche",it:{k:"marche",t:"Marche"}}};
 const RANK={kine:0,muscu:1,run:2,marche:3,box:4,repos:9};
 let MODS=ld("prepa-modifs",{}),EDIT=null,CONFIRM=null,ADD=null,ADD_REC=false,DET=null;
 let PROG=ld("prepa-programme",[]),PROG_SRV=[];
@@ -742,7 +742,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis, séances déplacées, annulées ou ajoutées des 7 derniers jours et ta semaine type, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 32 · 28/10</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 33 · 28/10</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -1055,6 +1055,7 @@ const CAT={
   X("dev-machine","Développé épaules machine","Chiffre de la machine.",[L("",5)],[30],10),
   X("push-press-technogym","Push press machine Technogym","Machine à disques : charge = disques chargés sur chaque bras. Une série = 10 bras droit, 10 bras gauche, puis 10 à deux bras (reps au total). Dos collé au dossier, poignées à hauteur d'épaules.",[L("",2.5)],[10],30),
   X("laterales","Élévations latérales","Charge par haltère, coudes légèrement fléchis, jusqu'à hauteur d'épaules.",[L("",1)],[8],15),
+  X("laterales-degressif","Élévations latérales dégressives","Charge par haltère : 10 reps à chaque charge, les trois à la suite sans repos (ex. 8, 6 puis 4 kg). Reps = 10 à chaque charge.",[L("",2),L("",2),L("",2)],[8,6,4],10),
   X("oiseau","Oiseau (arrière d'épaule)","Buste penché, charge par haltère.",[L("",1)],[6],15),
   X("landmine-epaule","Landmine press","Barre calée dans un coin, une main, reps par bras.",[L("",2.5)],[10],10),
   X("laterales-poulie","Élévations latérales poulie","Poulie basse du côté opposé, reps par bras.",[L("",2.5)],[5],15),
@@ -1134,6 +1135,8 @@ const ABS={opt:true,g:"abdos",k:"circuit",t:"Circuit abdos",rest:"1'30 entre les
  l:[],s:[[[],null],[[],null],[[],null]]};
 /* 28/10 (v32) : rowing bûcheron en 3 points (une main sur le banc, deux pieds au sol) dans la Pull et le Full body ; même clé « bucheron » → charges et historique gardés */
 const BUCHERON3={g:"dos-unilat",k:"bucheron",t:"Rowing bûcheron 3 points",rest:"1'30",h:"Poids d’un haltère, reps par bras, pas de repos entre les deux bras. 3 points d'appui : une main sur le banc, les deux pieds au sol écartés, genoux légèrement fléchis, buste presque parallèle au sol, dos neutre, hanches bien de face. Tire l'haltère vers la hanche, coude près du corps, sans tourner le buste. Si le bas du dos tire : genou sur le banc (dans la liste).",l:[L("",2)]};
+/* 28/10 (v33) : élévations latérales dégressives — 1 série = 10 reps à 8, 6 puis 4 kg sans repos, × 3 — dans le Full body et les séances Jambes + épaules */
+const LAT_DEG={g:"epaules",k:"laterales-degressif",t:"Élévations latérales dégressives",rest:"1'30",h:"Charge par haltère. 1 série = 3 charges à la suite, sans repos entre elles : 10 reps à la 1re, puis tout de suite 10 à la 2e, puis 10 à la 3e (8, 6 puis 4 kg), soit 30 reps. Reps = 10 à chaque charge. Coudes légèrement fléchis, monte jusqu'à hauteur d'épaules, sans élan, descente lente.",l:[L("",2),L("",2),L("",2)]};
 const S={
  push:{name:"Push",title:"Push — pecs / triceps",ex:[
   {g:"pecs-haut",k:"inc-halteres",t:"Développé incliné haltères",rest:"2'30",h:"Charge par haltère.",l:[L("",2)],s:[[[26],10],[[28],8],[[30],8],[[32],8]]},
@@ -1164,6 +1167,7 @@ const S={
   {g:"ischios",k:"leg-curl",t:"Leg curl",rest:"1'",h:"Chiffre affiché sur la machine. Descente lente.",l:[L("",5)],s:rep([40],12,3)},
   {g:"adducteurs",k:"adducteurs-machine",t:"Adducteurs machine",rest:"1'",h:"Chiffre affiché sur la machine. Amplitude contrôlée, pas de rebond en ouverture.",l:[L("",5)],s:rep([40],12,3)},
   {g:"epaules",k:"militaire",t:"Développé militaire",rest:"2'",h:"Haltères : poids d’un haltère. Barre : poids total. Reste gainé.",l:[L("",2)],s:rep([20],8,4)},
+  {...LAT_DEG,s:rep([8,6,4],10,3)},
   {g:"mollets",k:"mollets-unilat",t:"Montées de mollets unilatérales",rest:"45\"",h:"Reps par jambe, lent. Pour les tibias et les tendons.",l:[],s:rep([],10,3)},
   CARDIO,
   ABS]},
@@ -1173,6 +1177,7 @@ const S={
   {g:"quadris",k:"presse",t:"Presse à cuisses",rest:"2'",h:"Disques chargés uniquement, sans le chariot. Genoux dans l'axe.",l:[L("",10)],s:rep([120],12,3)},
   {g:"fessiers",k:"hip-thrust",t:"Hip thrust",rest:"1'30",h:"Poids total, barre comprise. Pause 1 s en haut.",l:[L("",10)],s:rep([60],10,3)},
   {g:"quadris-iso",k:"leg-extension",t:"Leg extension",rest:"1'",h:"Chiffre affiché sur la machine. Si le genou proteste, limite la fin d'extension.",l:[L("",5)],s:rep([40],12,3)},
+  {...LAT_DEG,s:rep([8,6,4],10,3)},
   {g:"mollets",k:"mollets-unilat",t:"Montées de mollets unilatérales",rest:"45\"",h:"Reps par jambe, lent.",l:[],s:rep([],10,3)},
   CARDIO,
   ABS]},
@@ -1185,7 +1190,7 @@ const S={
   {g:"epaules",k:"push-press-technogym",t:"Push press machine Technogym",rest:"1'30",h:"Machine à disques : charge = disques chargés sur chaque bras (les deux bras pareil). Une série = 10 bras droit, 10 bras gauche, puis 10 à deux bras : 30 reps, à saisir au total. Dos collé au dossier, poignées à hauteur d'épaules, pousse sans verrouiller les coudes, descente en 2 s. Les 10 à deux bras sont les plus durs : prends une charge qui t'y laisse 1 à 2 reps en réserve.",l:[L("",2.5)],s:rep([10],30,2)},
   {...BUCHERON3,s:rep([30],10,3)},
   {g:"dos-epaisseur",k:"tirage-horizontal",t:"Rowing assis à la poulie",rest:"1'30",h:"Chiffre de la colonne. Buste droit, tire vers le nombril, omoplates serrées 1 s. Pressé : mets Non ici, le bûcheron a déjà travaillé le dos.",l:[L("",5)],s:rep([55],10,2)},
-  {g:"epaules",k:"laterales",t:"Élévations latérales",rest:"1'",h:"Charge par haltère, coudes légèrement fléchis, jusqu'à hauteur d'épaules, descente lente. Pressé : mets Non ici, la push press machine a déjà travaillé les épaules.",l:[L("",1)],s:rep([8],15,2)},
+  {...LAT_DEG,s:rep([8,6,4],10,3)},
   {g:"abdos",k:"gainage-fb",t:"Gainage",rest:"1'",h:"Planche sur les avant-bras, corps aligné, fessiers serrés.",l:[],u:"s",rs:5,s:rep([],40,3)}]},
  fullpdc:{name:"Sans salle",title:"Full body sans salle — poids du corps",ex:[
   {g:"pdc-jambes",k:"air-squat",t:"Squats poids du corps",rest:"45\"",h:"Descends à la parallèle, talons au sol, genoux dans l'axe.",l:[],s:rep([],20,4)},
@@ -1234,6 +1239,15 @@ if(!st.fullV27){remapSeance("full",{1:2});st.fullV27=true;sv("salle-v4",st)}
 if(!st.fullV30){remapSeance("full",{0:0,1:1,2:2,3:3,4:4,5:6,6:7,7:8});st.fullV30=true;sv("salle-v4",st)}
 /* 28/10 (v32) : rowing bûcheron 3 points inséré en 7e position du Full body → saisies décalées à partir du rowing assis */
 if(!st.fullV32){remapSeance("full",{0:0,1:1,2:2,3:3,4:4,5:5,6:7,7:8,8:9});st.fullV32=true;sv("salle-v4",st)}
+/* 28/10 (v33) : élévations dégressives à la place des élévations latérales du Full body (position 8 : anciennes charges rangées sous
+   « Élévations latérales » dans la liste) et ajoutées en 6e position des Jambes A et B (saisies décalées à partir des mollets) */
+if(!st.fullV33){const x=st.full;
+ if(x.val&&x.val[8]){x.vx=x.vx||{};if(!x.vx["8|laterales"])x.vx["8|laterales"]=x.val[8];delete x.val[8]}
+ const H=x.hist||{};for(const d in H)if(H[d][8]==="laterales"){
+  if(d===TODAY&&(x.done||[]).some(e=>String(e).split("-")[0]==="8")){if(!x.pick||x.pick.date!==TODAY)x.pick={date:TODAY,m:{}};if(!x.pick.m[8])x.pick.m[8]="laterales"}
+  else delete H[d][8]}
+ remapSeance("legsA",{0:0,1:1,2:2,3:3,4:4,5:6,6:7,7:8});remapSeance("legsB",{0:0,1:1,2:2,3:3,4:4,5:6,6:7,7:8});
+ st.fullV33=true;sv("salle-v4",st)}
 if(!st.pushV13){const P=st.push,sh=k=>{const i=+k;return i>=6?i+1:i};
  const nv={};for(const k in (P.val||{}))nv[sh(k)]=P.val[k];P.val=nv;
  P.done=(P.done||[]).map(x=>{const [i,j]=String(x).split("-");return sh(i)+"-"+j});
