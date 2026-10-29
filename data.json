@@ -1,9 +1,42 @@
 {
- "maj": "2026-10-28T21:56",
+ "maj": "2026-10-29T21:55",
  "strava": {
-  "maj": "2026-10-28T21:56",
+  "maj": "2026-10-29T21:55",
   "source": "Strava list_activities, du 01/07 au 12/10/2026",
   "items": [
+   {
+    "id": "20781103495",
+    "n": "HYROX TRAINING",
+    "t": "HighIntensityIntervalTraining",
+    "d": "2026-10-29",
+    "h": "17:32",
+    "km": 0.0,
+    "min": 34.6,
+    "re": 76,
+    "s": null
+   },
+   {
+    "id": "20777992460",
+    "n": "Marche dans l'après-midi",
+    "t": "Walk",
+    "d": "2026-10-29",
+    "h": "13:09",
+    "km": 2.5,
+    "min": 38.7,
+    "re": 4,
+    "s": null
+   },
+   {
+    "id": "20775886754",
+    "n": "Kiné",
+    "t": "PhysicalTherapy",
+    "d": "2026-10-29",
+    "h": "10:13",
+    "km": 0.0,
+    "min": 47.1,
+    "re": 6,
+    "s": null
+   },
    {
     "id": "20768702932",
     "n": "FULL BODY",
