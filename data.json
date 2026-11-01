@@ -5,6 +5,17 @@
   "source": "Strava list_activities, du 01/07 au 12/10/2026",
   "items": [
    {
+    "id": "20814044850",
+    "n": "Sortie vallonnée progressive",
+    "t": "Run",
+    "d": "2026-11-01",
+    "h": "10:17",
+    "km": 6.03,
+    "min": 38.1,
+    "re": 50,
+    "s": null
+   },
+   {
     "id": "20794943814",
     "n": "Marche en soirée",
     "t": "Walk",
@@ -1317,5 +1328,11 @@
    "Au moindre symptôme (fièvre, courbatures diffuses, gêne thoracique) : pas de box, pas de course, marche seulement.",
    "Objectif S7 fixé à 6,5 km avant le début de la semaine. S'il n'est pas tenu, on répète la semaine, on ne le baisse pas."
   ]
+ },
+ "remplace": {
+  "20814044850": {
+   "t": "Sortie vallonnée progressive",
+   "note": "À la place de l'EF 35' du dimanche · 6,03 km, 116 m D+, FC moy. 154, VAP 6:00/km · pas une EF : hors indice"
+  }
  }
 }

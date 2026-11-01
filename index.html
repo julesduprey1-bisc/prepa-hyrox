@@ -500,6 +500,9 @@ function acts(){const m=new Map();
    Valeur lue dans la description Strava par le contrôle du soir (kb), sauf correction sur le téléphone
    (« prepa-boxkm ») ou recopiée par Claude dans data.json (« boxkm »). */
 let BOXKM=ld("prepa-boxkm",{}),BOXKM_SRV={};
+/* Run validé à la place d'une EF (demande de Jules, 01/11) : data.json « remplace » = {id Strava: {t, note}}. */
+let REMPL={};
+function remplOf(date,it,A){if(it.k!=="run")return null;const a=A.find(a=>matchAct(a,date,it)&&REMPL[a.id]);return a?REMPL[a.id]:null}
 function kmWod(a){if(a.k!=="box")return 0;const v=BOXKM[a.id]??BOXKM_SRV[a.id];return v!=null?+v:(+a.kb||0)}
 function seanceDates(){return new Set(SEANCES.map(s=>s.date))}
 const SALLE_TYPE={push:"push",pull:"pull",legsA:"legs",legsB:"legs",full:"full",fullpdc:"full"};
@@ -570,7 +573,7 @@ function conseil(date,A){A=A||acts();
  else titre="Feu vert : charge dans ta zone utile";
  return {date,niv,label:{vert:"Feu vert",orange:"Prudence",rouge:"Alléger"}[niv],titre,charge:c,horsProgramme:!w,
   seances:items.map(it=>({seance:it.t,type:it.k,conseil:conseilSeance(it,niv)||"telle que prévue"}))}}
-function retourSeance(a,A){if(a.re==null)return "";
+function retourSeance(a,A){if(REMPL[a.id])return REMPL[a.id].note+(a.re!=null?` · effort ${a.re}`:"");if(a.re==null)return "";
  if(a.k==="run"&&a.min>=15){const lim=Math.round(a.min*0.5);return a.re>lim?`EF trop intense : effort ${a.re} pour ${Math.round(a.min)}' (repère EF : ${lim} max)`:`effort ${a.re}, intensité EF respectée`}
  if(a.k==="box"){const p=A.filter(x=>x.k==="box"&&x.d<a.d&&x.re!=null).slice(0,8).map(x=>x.re).sort((u,v)=>u-v);
   if(p.length<3)return `effort ${a.re}`;const med=p[p.length>>1];
@@ -658,7 +661,7 @@ function statusOf(date,it,A){
  if(it.replaced)return ["annule","Remplacée"];
  if(it.cancel)return ["annule","Annulé"];
  const done=doneOn(date,it.k,A,it);
- if(done)return ["fait","✓ Fait"];
+ if(done)return remplOf(date,it,A)?["fait","✓ Remplacée"]:["fait","✓ Fait"];
  if(date<TODAY)return it.k==="kine"?["","Non relevée"]:["manque","✕ Manqué"];
  if(date===TODAY)return ["jour","● Aujourd'hui"];
  return ["","À venir"];
@@ -666,7 +669,7 @@ function statusOf(date,it,A){
 function itemRow(d,it,isT,s,w){
  const chips=(it.moved?`<span class="chip moved">Déplacée du ${dm(it.moved)}</span>`:"")+(it.added?`<span class="chip moved">Ajoutée</span>`:"")+(it.k==="kine"?`<span class="chip lock">RDV</span>`:it.lock?`<span class="chip lock">Fixe</span>`:it.cut?`<span class="chip">Coupe ${it.cut}</span>`:"");
  let h=`<div class="it ${it.cancel?"cancel":""}"><div class="txt"><strong>${chips}${esc(it.t)}</strong>
-  ${it.note&&!it.cancel?`<span class="small">${esc(it.note)}</span>`:""}${it.replaced&&MODS[it.par]?`<span class="muted small">par le ${esc(MODS[it.par].it.t)} du ${JOURSL[diff(w.start,MODS[it.par].date)]} ${dm(MODS[it.par].date)}</span>`:""}${it.k==="kine"&&!it.cancel&&it.h?`<span class="muted small">${esc(it.h)}</span>`:""}${it.k==="run"&&!it.cancel?`<span class="muted small">${it.ld?"6 lignes droites · ":""}${it.ref?"Protocole de référence · ":""}FC 130–140</span>`:""}${s&&s[0]==="fait"?(re=>re?`<span class="muted small">Effort relatif ${re}</span>`:"")(acts().filter(a=>matchAct(a,d.date,it)).reduce((n,a)=>n+(+a.re||0),0)):""}${it.k==="box"&&s&&s[0]==="fait"?wodRow(acts().find(a=>matchAct(a,d.date,it))):""}
+  ${it.note&&!it.cancel?`<span class="small">${esc(it.note)}</span>`:""}${it.replaced&&MODS[it.par]?`<span class="muted small">par le ${esc(MODS[it.par].it.t)} du ${JOURSL[diff(w.start,MODS[it.par].date)]} ${dm(MODS[it.par].date)}</span>`:""}${it.k==="kine"&&!it.cancel&&it.h?`<span class="muted small">${esc(it.h)}</span>`:""}${(r=>r?`<span class="small">Remplacée par : ${esc(r.t)}</span>`:"")(remplOf(d.date,it,acts()))}${it.k==="run"&&!it.cancel?`<span class="muted small">${it.ld?"6 lignes droites · ":""}${it.ref?"Protocole de référence · ":""}FC 130–140</span>`:""}${s&&s[0]==="fait"?(re=>re?`<span class="muted small">Effort relatif ${re}</span>`:"")(acts().filter(a=>matchAct(a,d.date,it)).reduce((n,a)=>n+(+a.re||0),0)):""}${it.k==="box"&&s&&s[0]==="fait"?wodRow(acts().find(a=>matchAct(a,d.date,it))):""}
   <span class="row" style="gap:14px">${it.salle&&!isT&&!it.cancel?`<button class="link" data-salle="${it.salle}">Checklist</button>`:""}${it.k==="run"&&!it.cancel?`<button class="link small-link" data-det="${it.key}">${DET===it.key?"Fermer le détail":"Détail"}</button>`:""}${it.k!=="repos"?`<button class="link small-link" data-edit="${it.key}">${EDIT===it.key?"Fermer":"Modifier"}</button>`:""}</span></div>${s?`<span class="st ${s[0]}">${s[1]}</span>`:""}</div>`;
  if(DET===it.key)h+=runDetailHTML(it,d.date);
  if(EDIT===it.key)h+=editPanel(d,it,w);
@@ -720,7 +723,7 @@ function renderSemaine(){
  if(td){h+=`<div class="block"><span class="eyebrow">Aujourd'hui</span>${adjHTML(conseil(TODAY,A),"Ajustement du jour")}<div class="todo">${td.items.map(it=>{const s=statusOf(TODAY,it,A);
    const ret=A.filter(a=>matchAct(a,TODAY,it)).map(a=>[retourSeance(a,A),kmWod(a)?fr(kmWod(a))+" km courus":""].filter(Boolean).join(" · ")).filter(Boolean).join(" · ");
    return `<div class="card k-${it.k}"><div class="row between"><h3>${it.moved?`<span class="chip moved">Déplacée du ${dm(it.moved)}</span>`:it.added?`<span class="chip moved">Ajoutée</span>`:""}${esc(it.t)}</h3>${s?`<span class="st ${s[0]}">${s[1]}</span>`:""}</div>
-   ${it.note?`<p><strong>${esc(it.note)}</strong></p>`:""}${it.cancel?"":it.k==="run"?runDetailHTML(it,TODAY):itemDetail(it)?`<p class="muted small">${esc(itemDetail(it))}</p>`:""}
+   ${it.note?`<p><strong>${esc(it.note)}</strong></p>`:""}${it.cancel?"":it.k==="run"?(remplOf(TODAY,it,A)?`<p><strong>Remplacée par : ${esc(remplOf(TODAY,it,A).t)}</strong></p>`:runDetailHTML(it,TODAY)):itemDetail(it)?`<p class="muted small">${esc(itemDetail(it))}</p>`:""}
    ${ret?`<p class="retour"><strong>Retour :</strong> ${esc(ret)}</p>`:""}
    ${it.salle&&!it.cancel?`<div><button class="btn" data-salle="${it.salle}">Ouvrir la checklist</button></div>`:""}</div>`}).join("")}</div></div>`;
   h+=chargeBlock(A)}
@@ -753,7 +756,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis, séances déplacées, annulées ou ajoutées des 7 derniers jours et ta semaine type, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 36 · 28/10</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 37 · 01/11</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -1505,7 +1508,7 @@ function renderSaved(){
 function renderAll(){renderSemaine();renderCourse();renderObjectif();renderSaved()}
 function bindApprove(){}
 show(VIEW);renderSalle();renderAll();
-fetch("data.json",{cache:"no-store"}).then(r=>r.json()).then(d=>{SNAP=d.strava||null;EF=d.ef||null;BOX=d.box||null;COACH=d.coach||null;MAJ=d.maj||null;PROG_SRV=Array.isArray(d.programme)?d.programme:[];BOXKM_SRV=d.boxkm||{};KCACHE.clear();renderAll()}).catch(()=>renderAll());
+fetch("data.json",{cache:"no-store"}).then(r=>r.json()).then(d=>{SNAP=d.strava||null;EF=d.ef||null;BOX=d.box||null;COACH=d.coach||null;MAJ=d.maj||null;PROG_SRV=Array.isArray(d.programme)?d.programme:[];BOXKM_SRV=d.boxkm||{};REMPL=d.remplace||{};KCACHE.clear();renderAll()}).catch(()=>renderAll());
 if("serviceWorker" in navigator){let reloaded=false;const had=!!navigator.serviceWorker.controller;
  navigator.serviceWorker.addEventListener("controllerchange",()=>{if(had&&!reloaded){reloaded=true;location.reload()}});
  addEventListener("load",()=>navigator.serviceWorker.register("sw.js").then(r=>r.update()).catch(()=>{}))}
