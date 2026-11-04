@@ -1,9 +1,20 @@
 {
- "maj": "2026-11-02T21:55",
+ "maj": "2026-11-04T21:55",
  "strava": {
-  "maj": "2026-11-02T21:55",
+  "maj": "2026-11-04T21:55",
   "source": "Strava list_activities, du 01/07 au 12/10/2026",
   "items": [
+   {
+    "id": "20854608087",
+    "n": "RUN EF / 6 x ON 6x15’s run @4’45 OFF EF 1’15",
+    "t": "Run",
+    "d": "2026-11-04",
+    "h": "10:28",
+    "km": 6.92,
+    "min": 54.0,
+    "re": 38,
+    "s": null
+   },
    {
     "id": "20814044850",
     "n": "Sortie vallonnée progressive",
@@ -1159,7 +1170,7 @@
   ]
  },
  "ef": {
-  "maj": "2026-10-25",
+  "maj": "2026-11-04",
   "points": [
    {
     "d": "2026-06-18",
@@ -1275,6 +1286,24 @@
     "ind": 15.69,
     "zone": "EF",
     "note": "bloc principal 30'"
+   },
+   {
+    "id": "20814044850",
+    "d": "2026-11-01",
+    "allure": "6:33",
+    "fc": 152.6,
+    "ind": 16.7,
+    "zone": "endurance active",
+    "note": "bloc principal 35'"
+   },
+   {
+    "id": "20854608087",
+    "d": "2026-11-04",
+    "allure": "8:22",
+    "fc": 144.5,
+    "ind": 13.78,
+    "zone": "endurance active",
+    "note": "bloc principal 50'"
    }
   ]
  },
