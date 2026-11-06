@@ -806,7 +806,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis, séances déplacées, annulées ou ajoutées des 7 derniers jours et ta semaine type, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 39 · 04/11</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 40 · 06/11</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -939,11 +939,13 @@ function volChart(A){
 function efChart(){
  const P=((EF&&EF.points)||[]).slice().sort((a,b)=>a.d.localeCompare(b.d));
  if(!P.length)return `<p class="muted">La série d'indices s'affiche dès que le suivi est chargé.</p>`;
- const x0=parse("2026-06-10"),x1=parse("2026-11-02"),W=360,H=210,m={l:30,r:8,t:12,b:22},iw=W-m.l-m.r,ih=H-m.t-m.b;
+ /* 06/11 (v40) : axe des dates prolongé jusqu'au dernier point + 7 jours (le point du 04/11 sortait du graphique) */
+ const x0=parse("2026-06-10"),x1=new Date(Math.max(+parse("2026-11-02"),+parse(addD(P[P.length-1].d,7)))),W=360,H=210,m={l:30,r:8,t:12,b:22},iw=W-m.l-m.r,ih=H-m.t-m.b;
  const lo=14,hi=16.8,x=s=>m.l+(parse(s)-x0)/(x1-x0)*iw,y=v=>m.t+ih-(v-lo)/(hi-lo)*ih;
  let g=`<rect class="band" x="${m.l}" width="${iw}" y="${y(16.4)}" height="${y(16.0)-y(16.4)}"/>`;
  for(let v=14;v<=16.8;v+=0.5)g+=`<line class="grid" x1="${m.l}" x2="${W-m.r}" y1="${y(v)}" y2="${y(v)}"/><text x="${m.l-6}" y="${y(v)+4}" text-anchor="end">${fr(v,1)}</text>`;
- ["2026-07-01","2026-08-01","2026-09-01","2026-10-01","2026-11-01"].forEach(s=>{g+=`<text x="${x(s)}" y="${H-8}" text-anchor="middle">${["janv","févr","mars","avr","mai","juin","juil","août","sept","oct","nov","déc"][+s.slice(5,7)-1]}</text>`});
+ const mois=[];for(let d=new Date(2026,6,1);d<=x1;d=new Date(d.getFullYear(),d.getMonth()+1,1))mois.push(ymd(d));
+ mois.forEach(s=>{g+=`<text x="${x(s)}" y="${H-8}" text-anchor="middle">${["janv","févr","mars","avr","mai","juin","juil","août","sept","oct","nov","déc"][+s.slice(5,7)-1]}</text>`});
  g+=`<text x="${W-m.r}" y="${y(16.4)-5}" text-anchor="end">palier 16,0–16,4</text>`;
  const ef=P.filter(p=>p.zone==="EF");
  g+=`<path class="line" d="${ef.map((p,i)=>(i?"L":"M")+x(p.d)+","+y(p.ind)).join("")}"/>`;
