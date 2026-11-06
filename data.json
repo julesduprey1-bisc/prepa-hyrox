@@ -1,9 +1,31 @@
 {
- "maj": "2026-11-05T21:55",
+ "maj": "2026-11-06T21:55",
  "strava": {
-  "maj": "2026-11-05T21:55",
+  "maj": "2026-11-06T21:55",
   "source": "Strava list_activities, du 01/07 au 12/10/2026",
   "items": [
+   {
+    "id": "20883217267",
+    "n": "Marche dans l'après-midi",
+    "t": "Walk",
+    "d": "2026-11-06",
+    "h": "14:58",
+    "km": 1.86,
+    "min": 30.3,
+    "re": 4,
+    "s": null
+   },
+   {
+    "id": "20882768177",
+    "n": "RUN EF",
+    "t": "Run",
+    "d": "2026-11-06",
+    "h": "13:42",
+    "km": 6.78,
+    "min": 57.8,
+    "re": 30,
+    "s": null
+   },
    {
     "id": "20854608087",
     "n": "RUN EF / 6 x ON 6x15’s run @4’45 OFF EF 1’15",
@@ -1170,7 +1192,7 @@
   ]
  },
  "ef": {
-  "maj": "2026-11-04",
+  "maj": "2026-11-06",
   "points": [
    {
     "d": "2026-06-18",
@@ -1304,6 +1326,15 @@
     "ind": 15.34,
     "zone": "EF",
     "note": "bloc 40' (marche, 2 arrêts et lignes droites exclus) · vallonné, 117 m D+"
+   },
+   {
+    "id": "20882768177",
+    "d": "2026-11-06",
+    "allure": "8:26",
+    "fc": 138.6,
+    "ind": 14.26,
+    "zone": "EF",
+    "note": "bloc principal 50'"
    }
   ]
  },
