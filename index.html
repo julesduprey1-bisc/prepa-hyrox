@@ -818,7 +818,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis, séances déplacées, annulées ou ajoutées des 7 derniers jours et ta semaine type, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 42 · 06/11</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 43 · 11/11</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -1248,7 +1248,7 @@ const S={
   {g:"dos-largeur",k:"ss-tirages",t:"Superset tirages",rest:"1'30 entre les tours",h:"Chiffre affiché sur la colonne. Vertical 10 reps puis horizontal 10 reps, sans repos entre les deux.",l:[L("Vert.",5),L("Horiz.",5)],s:[[[45,40],null],[[50,45],null],[[55,50],null],[[60,55],null]]},
   {...BUCHERON3,s:[[[30],10],[[30],10],[[36],7]]},
   {g:"grip",k:"suspension",t:"Suspension barre (grip)",rest:"1'30",h:"Avant le bloc biceps, grip encore frais. Le plus longtemps possible, puis règle la durée tenue : c’est ton sled pull et ton farmers carry.",l:[],u:"s",rs:5,s:[[[],45],[[],45]]},
-  {g:"biceps",k:"ss-biceps",t:"Superset biceps",rest:"1'30 entre les tours",h:"Zéro repos entre les deux. 1) Curl mur — 10 reps, poids d’un haltère, coudes collés au mur, zéro élan. 2) 21 barre EZ — poids total barre comprise, 7 bas → mi-course, 7 mi-course → haut, 7 complètes. La barre EZ sera plus légère qu’en exercice isolé : c’est la pré-fatigue, pas une régression.",l:[L("Curl",0.5),L("EZ",2.5)],s:rep([10,15],null,3)},
+  {g:"biceps",k:"ss-biceps",t:"Superset biceps",rest:"1'30–2' entre les tours",h:"Les 3 à la suite, zéro repos. 1) Curl coude au mur — 10 reps, charge d’un haltère, coudes collés au mur, zéro élan. 2) Curl incliné sur banc — 10 reps, banc à 45–60°, bras pendants derrière le buste, charge d’un haltère. 3) 21 barre EZ — poids total barre comprise : 7 du bas à mi-course, 7 de mi-course en haut, 7 complètes. Les charges baissent d’un exercice à l’autre : c’est la pré-fatigue, pas une régression.",l:[L("Mur",0.5),L("Banc",0.5),L("EZ",2.5)],s:rep([12,8,15],null,3)},
   {g:"biceps-iso",k:"curl-poulie-unilat",t:"Curl unilatéral poulie",rest:"1'",h:"Chiffre affiché sur la colonne. 12 reps par bras, coude fixe le long du corps, descente lente. Finisher : charge légère, contraction propre.",l:[L("",2.5)],s:[[[5],12],[[7.5],10],[[7.5],10]]},
   {g:"lombaires",k:"circuit-lombaire",opt:true,t:"Renfo lombaire",rest:"1' entre les tours",h:"Zéro repos entre les 4 exercices, 1' après chaque tour. Charge légère, qualité avant tout. Aucune douleur ne doit apparaître : si le bas du dos tire, tu réduis l'amplitude ou tu stoppes.",
    list:["Hip hinge / good morning barre à vide — 12 reps, dos neutre, charnière à la hanche","Bird dog — 8 par côté, 3 s de maintien, bassin immobile","Extension lombaire sur banc 45° — 12 reps, pas d'hyperextension en haut","Pont fessier — 12 reps, pause 2 s en haut"],
@@ -1383,6 +1383,11 @@ if(!st.pushV13){const P=st.push,sh=k=>{const i=+k;return i>=6?i+1:i};
  P.done=(P.done||[]).map(x=>{const [i,j]=String(x).split("-");return sh(i)+"-"+j});
  if(P.skip&&P.skip.m){const m={};for(const k in P.skip.m)m[sh(k)]=P.skip.m[k];P.skip.m=m}
  st.pushV13=true;sv("salle-v4",st)}
+/* 11/11 (v43) : superset biceps de la Pull à 3 exercices, dans l'ordre voulu par Jules (curl coude au mur → curl incliné sur banc
+   → 21 barre EZ) : charges gardées, curl banc inséré au milieu à 8 kg */
+if(!st.pullV43){const x=st.pull;
+ if(x&&x.val&&x.val[4])for(const j in x.val[4]){const v=x.val[4][j];if(v&&Array.isArray(v.kg)&&v.kg.length===2)v.kg=[v.kg[0],8,v.kg[1]]}
+ st.pullV43=true;sv("salle-v4",st)}
 function recapLinesFor(id,date){const x=st[id],H=(x.hist||{})[date]||{},sk=(x.skip&&x.skip.date===date)?x.skip.m:{},xm=(x.extra&&x.extra.date===date)?x.extra.m:{},done=new Set(x.done||[]);
  return slots(id).map(i=>{const k=H[i]||exDef(id,i).k,ex=exFor(id,i,k);if(sk[i]===true)return ex.t+" : non fait";
   const sets=Array.from({length:ex.s.length+(xm[i]||0)},(_,j)=>done.has(i+"-"+j)?summary(ex,valFor(id,i,j,k)):"").filter(Boolean);
