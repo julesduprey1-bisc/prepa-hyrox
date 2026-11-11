@@ -1,9 +1,53 @@
 {
- "maj": "2026-11-10T21:55",
+ "maj": "2026-11-11T21:55",
  "strava": {
-  "maj": "2026-11-10T21:55",
+  "maj": "2026-11-11T21:55",
   "source": "Strava list_activities, du 01/07 au 12/10/2026",
   "items": [
+   {
+    "id": "20947472869",
+    "n": "Marche dans l'après-midi",
+    "t": "Walk",
+    "d": "2026-11-11",
+    "h": "14:23",
+    "km": 2.5,
+    "min": 39.1,
+    "re": 4,
+    "s": null
+   },
+   {
+    "id": "20945260211",
+    "n": "Marche tapis incliné",
+    "t": "Walk",
+    "d": "2026-11-11",
+    "h": "11:41",
+    "km": 3.79,
+    "min": 50.4,
+    "re": 16,
+    "s": null
+   },
+   {
+    "id": "20944576463",
+    "n": "Pull — dos / biceps",
+    "t": "WeightTraining",
+    "d": "2026-11-11",
+    "h": "10:11",
+    "km": 0.0,
+    "min": 89.7,
+    "re": 18,
+    "s": "pull"
+   },
+   {
+    "id": "20943606951",
+    "n": "Entraînement aux poids le matin",
+    "t": "WeightTraining",
+    "d": "2026-11-11",
+    "h": "10:07",
+    "km": 0.0,
+    "min": 3.2,
+    "re": null,
+    "s": null
+   },
    {
     "id": "20936588173",
     "n": "HIIT en soirée",
@@ -13,7 +57,8 @@
     "km": 0.0,
     "min": 35.4,
     "re": 107,
-    "s": null
+    "s": null,
+    "kb": 2.0
    },
    {
     "id": "20933280755",
