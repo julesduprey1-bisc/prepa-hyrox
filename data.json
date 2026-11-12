@@ -1,9 +1,20 @@
 {
- "maj": "2026-11-11T21:55",
+ "maj": "2026-11-12T21:55",
  "strava": {
-  "maj": "2026-11-11T21:55",
+  "maj": "2026-11-12T21:55",
   "source": "Strava list_activities, du 01/07 au 12/10/2026",
   "items": [
+   {
+    "id": "20962028929",
+    "n": "HYROX EMOM 30’",
+    "t": "HighIntensityIntervalTraining",
+    "d": "2026-11-12",
+    "h": "17:29",
+    "km": 0.0,
+    "min": 30.0,
+    "re": 86,
+    "s": null
+   },
    {
     "id": "20947472869",
     "n": "Marche dans l'après-midi",
