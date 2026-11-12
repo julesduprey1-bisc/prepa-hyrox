@@ -67,7 +67,7 @@ button:focus-visible,a:focus-visible,textarea:focus-visible{outline:3px solid va
 
 /* Barre d'onglets */
 nav.tabbar{flex:none;position:relative;z-index:10;background:var(--panel);border-top:1px solid var(--line);padding:6px 16px calc(6px + env(safe-area-inset-bottom,0px))}
-nav.tabbar .in{max-width:600px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+nav.tabbar .in{max-width:600px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
 nav.tabbar button{min-height:50px;border:none;border-radius:10px;background:transparent;cursor:pointer;font:600 16px var(--font-d);letter-spacing:.03em;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 nav.tabbar button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2}
 nav.tabbar button[aria-selected="true"]{color:var(--ink);background:var(--soft)}
@@ -175,6 +175,21 @@ tr.cur td{background:var(--soft)}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .legend i{display:inline-block;width:14px;height:8px;border-radius:2px}
 details summary{cursor:pointer;color:var(--muted);font-size:14px;min-height:32px;display:flex;align-items:center}
+/* Repas (v44) */
+.mac{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.mac>div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.mac small{color:var(--muted);font-size:13px}
+.mac b{font:700 22px/1 var(--font-d);font-variant-numeric:tabular-nums}
+.meal{border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:6px}
+.meal ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px}
+.prod{display:flex;justify-content:space-between;gap:10px;align-items:center;border-top:1px solid var(--line)}
+.prod .check{align-items:flex-start;padding:6px 0}
+.prod .check input{accent-color:var(--done);flex:none;margin-top:2px}
+.fgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.rin{display:block;width:100%;min-height:42px;border-radius:8px;border:2px solid var(--line);background:transparent;color:var(--ink);font:400 16px var(--font-b);padding:4px 8px;margin-top:2px}
+.rdet summary{font-weight:600;color:var(--ink)}
+.rdet[open]{display:flex;flex-direction:column;gap:8px}
+code{font:600 14px ui-monospace,Menlo,monospace;background:var(--soft);padding:0 4px;border-radius:4px}
 #tip{position:fixed;z-index:20;pointer-events:none;background:var(--ink);color:var(--bg);font:500 13px/1.35 var(--font-b);padding:6px 9px;border-radius:8px;max-width:240px;white-space:pre-line}
 
 /* Objectif */
@@ -309,6 +324,7 @@ button.set[aria-pressed="true"] .lbl{text-decoration:line-through}
     <div class="slist" id="slist"></div>
     <div class="block" id="ssaved" style="margin-top:14px"></div>
   </section>
+  <section id="v-repas" class="stack" aria-label="Repas" hidden></section>
   <section id="v-objectif" class="stack" aria-label="Objectif" hidden></section>
 </div></main>
 
@@ -317,6 +333,7 @@ button.set[aria-pressed="true"] .lbl{text-decoration:line-through}
     <button role="tab" data-v="semaine" id="t-semaine"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Semaine</button>
     <button role="tab" data-v="course" id="t-course"><svg viewBox="0 0 24 24"><path d="M3 20h18M6 16v-4M11 16V8M16 16v-6M21 16V5"/></svg>Course</button>
     <button role="tab" data-v="salle" id="t-salle"><svg viewBox="0 0 24 24"><path d="M6 7v10M18 7v10M3 10v4M21 10v4M6 12h12"/></svg>Salle</button>
+    <button role="tab" data-v="repas" id="t-repas"><svg viewBox="0 0 24 24"><path d="M6 3v6a2 2 0 0 0 4 0V3M8 3v18M17 21V3c-2.2 1.2-3.5 3.6-3.5 7v3H17"/></svg>Repas</button>
     <button role="tab" data-v="objectif" id="t-objectif"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.5"/></svg>Lyon</button>
   </div>
 </nav>
@@ -566,7 +583,7 @@ function srcLabel(){const m=SNAP&&SNAP.maj?dm(SNAP.maj)+(SNAP.maj.length>10?" à
 function srcHTML(){const s=srcLabel();return `<span class="src ${s.c}"><i></i>${esc(s.t)}${s.btn?` <button type="button" data-act="approve">${esc(s.btn)}</button>`:""}</span>`}
 
 /* ================= Navigation ================= */
-const VIEWS=["semaine","course","salle","objectif"];
+const VIEWS=["semaine","course","salle","repas","objectif"];
 let VIEW=(location.hash||"").slice(1);
 if(!VIEWS.includes(VIEW))VIEW=ld("app-view",null)||"semaine";
 if(!VIEWS.includes(VIEW))VIEW="semaine";
@@ -817,8 +834,8 @@ function renderSemaine(){
   <textarea id="rnote" placeholder="Sommeil, douleurs, fatigue…">${esc(NOTE_DRAFT||(todayR&&FORME==null?todayR.note||"":""))}</textarea>
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
- h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis, séances déplacées, annulées ou ajoutées des 7 derniers jours et ta semaine type, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 43 · 11/11</p>`;
+ h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis, repas importés, séances déplacées, annulées ou ajoutées des 7 derniers jours et ta semaine type, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
+ h+=`<p class="small muted" style="text-align:center">Version 44 · 12/11</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -920,6 +937,8 @@ function coachText(){const from=addD(TODAY,-6);
  if(ab.length)t+="\n\nPas chez moi :\n"+ab.map(r=>`- du ${dm(r.from)} au ${dm(r.to)}`).join("\n");
  const bk=acts().filter(a=>BOXKM[a.id]!=null&&a.d>=from).map(a=>`- ${dm(a.d)} ${a.n.split("\n")[0]} : ${fr(BOXKM[a.id])} km`);
  if(bk.length)t+="\n\nCourse dans les WOD (corrigée) :\n"+bk.join("\n");
+ const rp=Object.keys(REPAS).filter(d=>d>=from).sort();
+ if(rp.length)t+="\n\nRepas (MyFitnessPal) :\n"+rp.map(d=>{const r=REPAS[d],c=cibles(d);return `- ${dm(d)} : ${r.kcal} kcal · P ${r.p} · G ${r.g} · L ${r.l} (cible ${c.kcal} kcal, ${JT[c.t].toLowerCase()})`}).join("\n");
  t+="\n\nRessenti :\n"+(re.length?re.map(r=>`- ${dm(r.date)} forme ${r.forme}/5${r.symptomes?" · symptômes":""}${r.note?" · "+r.note:""}`).join("\n"):"- aucun");
  return t}
 async function shareCoach(){const t=coachText(),m=$("#sendmsg");
@@ -1020,6 +1039,223 @@ function renderObjectif(){
  <div class="block"><h2>Séances box</h2>${box.length?`<div class="tablewrap"><table><thead><tr><th>Date</th><th>Format</th><th class="r">Durée</th><th class="r">FC moy/max</th><th class="r">Effort</th></tr></thead><tbody>${box.map(b=>`<tr><td class="num">${dm(b.d)}</td><td>${esc(b.format)}</td><td class="r">${esc(b.duree)}</td><td class="r">${esc(b.fc)}</td><td class="r">${esc(b.effort)}</td></tr>`).join("")}</tbody></table></div>`:`<p class="muted">L'historique box s'affiche dès que le suivi est chargé.</p>`}</div>
  <div class="block"><h2>Standards Doubles Mixte</h2><p class="small num">Sled push 152 kg · sled pull 103 kg · farmers 2 × 24 kg · lunges 20 kg · wall balls 6 kg × 100</p></div>`;
  $("#v-objectif").innerHTML=h}
+
+/* ================= Vue Repas (v44, 12/11) =================
+   Jules (12/11) : « Peux-tu ajouter un onglet suivi repas ». Saisie : « va les chercher sur MyFitnessPal ». En plus : « conseille-moi
+   des plats par rapport à une liste de produits que j'achète, qui correspondent à mon objectif de calories et adaptés à mes
+   séances ». Objectif MFP : 2 300 kcal, 45 % glucides / 35 % protéines / 20 % lipides.
+   - Cibles du jour = objectif MFP ; glucides +60 g les gros jours (box, run HYROX, run ≥ 60', ou 2 séances), −40 g au repos (ni
+     course, ni salle, ni box), d'après le programme du jour (effDays : changements et « pas chez moi » compris).
+   - MyFitnessPal n'a pas d'API : MFP écrit les repas dans Santé ; un raccourci iPhone additionne les totaux du jour et les copie
+     (« REPAS kcal … P … G … L … ») ; « Importer » lit le presse-papiers. Collage ou saisie à la main possibles.
+   - Idées de plats : modèles par repas remplis avec les produits de Jules (liste de base + ses ajouts) ; grammes calculés pour
+     tomber sur la part du repas (protéines et glucides résolus ensemble, huile pour compléter les lipides). Après un import :
+     seulement les repas pas encore mangés, sur ce qu'il reste.
+   - Tout reste sur le téléphone (prepa-nutri, prepa-repas, prepa-produits, prepa-idees) : rien dans data.json (dépôt public). */
+const P0=(id,n,r,kcal,p,g,l,o)=>Object.assign({id,n,r,kcal,p,g,l},o||{});
+/* Valeurs moyennes pour 100 g (à remplacer par celles des étiquettes de Jules). u = grammes par unité (arrondi à l'unité),
+   ud = taille d'une portion affichée seulement, mx = maximum par repas. Rôles : Cdj féculent du déjeuner / dîner, Cpd / Cco pain
+   et céréales du petit-déj / de la collation, Qdj viande, poisson, œufs, Qpd / Qco laitier ou complément protéiné, Opd œufs du
+   petit-déj, Fr fruit, Leg légumes, Oil matière grasse, Su sucré. */
+const PRODS0=[ /* liste de courses de Jules (12/11) ; l'huile d'olive en plus, comme placard */
+ P0("pates","pâtes (pesées crues)",["Cdj"],359,12.5,71,1.8,{mx:250}),
+ P0("riz","riz (pesé cru)",["Cdj"],352,8.5,77,0.9,{mx:250}),
+ P0("rizc","riz complet (pesé cru)",["Cdj"],350,7.5,72,2.7,{mx:250}),
+ P0("wrap","galette wrap protéinée Lidl",["Cpd","Cco","Wdj"],280,22,30,7,{u:60,mx:240}),
+ P0("avoine","flocons d'avoine",["Cpd","Cco"],372,13.5,58.7,7,{mx:150}),
+ P0("poulet","blanc de poulet (cru)",["Qdj"],109,23,0,1.5,{mx:350}),
+ P0("dinde","escalope de dinde (crue)",["Qdj"],107,24,0,1.2,{mx:350}),
+ P0("boeuf","bœuf, pièce à griller (cru)",["Qdj"],145,21.5,0,6.5,{mx:300}),
+ P0("hache","steak / viande hachée 5 % (cru)",["Qdj"],124,21,0,5,{mx:300}),
+ P0("saumon","saumon (cru)",["Qdj"],205,20,0,13.5,{mx:250}),
+ P0("thon","thon au naturel (égoutté)",["Qdj"],116,26,0,1,{mx:250,mn:50}),
+ P0("oeufs","œufs",["Qdj","Opd"],143,12.6,0.7,9.9,{u:60,mx:360}),
+ P0("yaourt","yaourt protéiné Lidl",["Qpd","Qco"],60,10,4,0.2,{mx:500,mn:100}),
+ P0("whey","whey isolate",["Qpd","Qco"],370,88,2,0.5,{ud:30,un:"dose",mx:60,mn:15}),
+ P0("banane","banane",["Fr"],90,1.1,20.5,0.3,{u:120}),
+ P0("pomme","pomme",["Fr"],54,0.3,12,0.2,{u:150}),
+ P0("grenade","demi-grenade (arils)",["Fr"],83,1.7,14.7,1.2,{u:100}),
+ P0("frouges","fruits rouges surgelés",["Fr"],45,1,8,0.3,{}),
+ P0("brocoli","brocoli",["Leg"],34,2.8,4,0.4,{}),
+ P0("haricots","haricots verts",["Leg"],31,1.8,3.6,0.2,{}),
+ P0("creme","crème fraîche épaisse 30 %",["Oil"],292,2.4,2.6,30,{ud:15,un:"c. à s.",mx:45}),
+ P0("huile","huile d'olive (placard)",["Oil"],900,0,0,100,{ud:10,un:"c. à s.",mx:15}),
+ P0("choco","chocolat en poudre",["Su"],380,4.5,80,3.5,{ud:10,un:"c. à s.",mx:20}),
+];
+const PTYPES=[["fec","Féculent (déjeuner, dîner)",["Cdj"]],["cer","Pain, céréales (petit-déj, collation)",["Cpd","Cco"]],
+ ["pro","Viande, poisson, œufs",["Qdj"]],["lai","Laitier protéiné (skyr, fromage blanc…)",["Qpd","Qco"]],["sup","Complément protéiné",["Qco"]],
+ ["fru","Fruit",["Fr"]],["leg","Légume",["Leg"]],["mg","Matière grasse",["Oil"]],["suc","Sucré (miel, confiture…)",["Su"]],
+ ["aut","Autre (pas dans les idées)",[]]];
+const REPAS_SL=[["pd","Petit-déjeuner","06:00"],["dj","Déjeuner","11:30"],["co","Collation","15:30"],["dn","Dîner","19:00"]];
+const PARTS={p:{pd:.25,dj:.30,co:.15,dn:.30},l:{pd:.25,dj:.35,co:.05,dn:.35},kc:{pd:.25,dj:.30,co:.15,dn:.30},
+ g:{gros:{pd:.25,dj:.30,co:.20,dn:.25},entr:{pd:.25,dj:.30,co:.15,dn:.30},repos:{pd:.30,dj:.35,co:.10,dn:.25}}};
+const MOD_G={gros:60,entr:0,repos:-40},JT={gros:"Gros jour",entr:"Jour d'entraînement",repos:"Jour de repos"};
+/* Modèles de repas : x = C (glucides résolus), Q (protéines résolues), fix (n unités ou g grammes), F (huile pour les lipides). */
+const MODELES={
+ pd:[[{r:"Cpd",x:"C",no:["wrap"]},{r:"Qpd",x:"Q"},{r:"Fr",x:"fix",n:1}],
+     [{r:"Cpd",x:"C",ids:["avoine"]},{r:"Qpd",x:"Q"},{r:"Su",x:"fix",g:10,req:true},{r:"Fr",x:"fix",n:1}],
+     [{r:"Cpd",x:"C"},{r:"Opd",x:"fix",n:2,req:true},{r:"Qpd",x:"Q"},{r:"Fr",x:"fix",n:1}],
+     [{r:"Cpd",x:"C",ids:["wrap"]},{r:"Opd",x:"fix",n:2,req:true},{r:"Fr",x:"fix",n:1}]],
+ /* Wraps protéinés au déjeuner / dîner : 2 wraps fixes, la viande complète les protéines, un fruit les glucides. */
+ dj:[[{r:"Cdj",x:"C"},{r:"Qdj",x:"Q"},{r:"Leg",x:"fix",g:200},{r:"Oil",x:"F"}],
+     [{r:"Wdj",x:"fix",n:2,req:true},{r:"Qdj",x:"Q"},{r:"Leg",x:"fix",g:150},{r:"Fr",x:"fix",n:1},{r:"Oil",x:"F"}]],
+ co:{gros:[[{r:"Cco",x:"C"},{r:"Qco",x:"Q"},{r:"Fr",x:"fix",n:1,pref:"banane"}],[{r:"Cco",x:"C",ids:["wrap"]},{r:"Fr",x:"fix",n:1,pref:"banane"}]],
+     entr:[[{r:"Cco",x:"C"},{r:"Qco",x:"Q"},{r:"Fr",x:"fix",n:1}],[{r:"Qco",x:"Q"},{r:"Fr",x:"fix",n:1}],[{r:"Cco",x:"C",ids:["wrap"]},{r:"Fr",x:"fix",n:1}]],
+     repos:[[{r:"Qco",x:"Q"},{r:"Fr",x:"fix",n:1}]]}};
+MODELES.dn=MODELES.dj;
+let NUTRI=ld("prepa-nutri",null)||{kcal:2300,g:45,p:35,l:20};
+let REPAS=ld("prepa-repas",{})||{};
+let PRODU=ld("prepa-produits",null)||{add:[],off:[]};
+let IDEES=ld("prepa-idees",null)||{};
+let REPAS_MSG="";
+function prods(){const off=new Set(PRODU.off||[]);return [...PRODS0,...(PRODU.add||[])].filter(p=>!off.has(p.id))}
+function jourType(date){const w=weekOf(date);if(!w)return {t:"entr",s:[],hors:true};
+ const d=effDays(w).find(x=>x.date===date),act=(d?d.items:[]).filter(x=>!x.cancel&&["run","muscu","box"].includes(x.k));
+ const big=act.some(x=>x.k==="box"||x.hyx||(x.k==="run"&&(x.min||0)>=60))||act.length>=2;
+ return {t:big?"gros":act.length?"entr":"repos",s:act.map(x=>x.t)}}
+function cibles(date){const j=jourType(date),b=NUTRI;
+ const p=Math.round(b.kcal*b.p/100/4),g=Math.round(b.kcal*b.g/100/4)+MOD_G[j.t],l=Math.round(b.kcal*b.l/100/9);
+ return {...j,p,g,l,kcal:p*4+g*4+l*9}}
+/* Texte du raccourci : « REPAS kcal 1 850,4 P 150 G 200,5 L 50 » (espaces fines et virgules acceptées). */
+function parseRepas(t){const s=String(t||"").replace(/(\d)[    ](?=\d{3}(?!\d))/g,"$1").replace(/(\d),(\d)/g,"$1.$2");
+ const n=re=>{const m=s.match(re);return m?parseFloat(m[1]):NaN};
+ const r={kcal:n(/kcal\D{0,4}?(\d+(?:\.\d+)?)/i),p:n(/\bP\D{0,4}?(\d+(?:\.\d+)?)/),g:n(/\bG\D{0,4}?(\d+(?:\.\d+)?)/),l:n(/\bL\D{0,4}?(\d+(?:\.\d+)?)/)};
+ return [r.kcal,r.p,r.g,r.l].every(x=>isFinite(x)&&x>=0)?r:null}
+function hmNow(){const d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")}
+/* Repas déjà mangés d'après les kcal importées : dans l'ordre, tant que la part cumulée tient dans l'import (+15 %) et que
+   l'heure du repas est passée. Corrigeable à la main. */
+function deduireMange(kcal,cible,hm){let cum=0;const out=[];
+ for(const [k,,deb] of REPAS_SL){cum+=PARTS.kc[k];if(deb<=hm&&cum*cible<=kcal*1.15)out.push(k);else break}return out}
+function saveImport(r,src){const C=cibles(TODAY),hm=hmNow();
+ REPAS[TODAY]={kcal:Math.round(r.kcal),p:Math.round(r.p),g:Math.round(r.g),l:Math.round(r.l),h:hm,src,eat:deduireMange(r.kcal,C.kcal,hm)};
+ const lim=addD(TODAY,-60);for(const d in REPAS)if(d<lim)delete REPAS[d];
+ sv("prepa-repas",REPAS);REPAS_MSG="";renderRepas()}
+async function importerMFP(){let t="";
+ try{t=await navigator.clipboard.readText()}catch(e){REPAS_MSG="Lecture du presse-papiers refusée : colle le texte du raccourci dans le champ « Coller ».";renderRepas();return}
+ const r=parseRepas(t);if(!r){REPAS_MSG="Rien de lisible dans le presse-papiers : lance d'abord le raccourci « Repas MFP ».";renderRepas();return}
+ saveImport(r,"MFP")}
+function partsDe(slots,t){const sum=o=>slots.reduce((s,k)=>s+o[k],0),sp=sum(PARTS.p),sg=sum(PARTS.g[t]),sl=sum(PARTS.l);
+ const o={};slots.forEach(k=>o[k]={p:PARTS.p[k]/sp,g:PARTS.g[t][k]/sg,l:PARTS.l[k]/sl});return o}
+/* Ce qu'il reste à planifier : toute la journée sans import ; après un import, ce qu'il reste sur les repas pas encore mangés. */
+function plan(date){const C=cibles(date),r=REPAS[date],eat=new Set(r?(r.eat||[]):[]);
+ const slots=REPAS_SL.map(s=>s[0]).filter(k=>!eat.has(k));
+ const R=r?{p:Math.max(0,C.p-r.p),g:Math.max(0,C.g-r.g),l:Math.max(0,C.l-r.l)}:{p:C.p,g:C.g,l:C.l};
+ const sh=partsDe(slots,C.t),T={};slots.forEach(k=>T[k]={p:R.p*sh[k].p,g:R.g*sh[k].g,l:R.l*sh[k].l});
+ return {C,slots,T,R}}
+function rondG(p,g){if(!(g>0))return 0;g=Math.min(g,p.mx||400);
+ if(p.u)return Math.max(1,Math.round(g/p.u))*p.u;return g<100?Math.max(5,Math.round(g/5)*5):Math.round(g/10)*10}
+function resoudre(T,combo){let P=T.p,G=T.g;const gr=new Map();
+ combo.filter(i=>i.x==="fix").forEach(i=>{const g=i.n?(i.p.u||120)*i.n:i.g;gr.set(i,g);P-=i.p.p*g/100;G-=i.p.g*g/100});
+ const C=combo.find(i=>i.x==="C"),Q=combo.find(i=>i.x==="Q");let c=0,q=0;
+ if(C&&Q){const a=C.p,b=Q.p,det=a.p*b.g-b.p*a.g;
+  if(Math.abs(det)>1e-9){c=(P*b.g-b.p*G)/det*100;q=(a.p*G-a.g*P)/det*100}
+  if(q<0){q=0;c=a.g?G/a.g*100:0}if(c<0){c=0;q=b.p?P/b.p*100:0}}
+ else if(C)c=C.p.g?G/C.p.g*100:0;else if(Q)q=Q.p.p?P/Q.p.p*100:0;
+ const mn=p=>p.mn??(p.u?p.u*.75:p.r.some(r=>r[0]==="Q")?60:30),bad=(C&&c<mn(C.p))||(Q&&q<mn(Q.p));
+ if(C)gr.set(C,rondG(C.p,c));if(Q)gr.set(Q,rondG(Q.p,q));
+ const F=combo.find(i=>i.x==="F");
+ if(F){let l=0;gr.forEach((g,i)=>l+=i.p.l*g/100);const need=Math.max(0,T.l-l),g=F.p.l?Math.min(need/(F.p.l/100),F.p.mx||15):0;gr.set(F,Math.round(g/5)*5)}
+ const items=combo.map(i=>({p:i.p,g:gr.get(i)||0})).filter(i=>i.g>0);
+ const tot=items.reduce((s,i)=>({kcal:s.kcal+i.p.kcal*i.g/100,p:s.p+i.p.p*i.g/100,g:s.g+i.p.g*i.g/100,l:s.l+i.p.l*i.g/100}),{kcal:0,p:0,g:0,l:0});
+ return {items,tot,bad}}
+/* Toutes les combinaisons possibles d'un repas avec les produits actifs ; on garde celles qui tombent près de la cible. */
+function combos(slot,t,T,sans){const P=prods(),mods=slot==="co"?MODELES.co[t]:MODELES[slot],out=[];
+ mods.forEach((m,mi)=>{let acc=[[]];
+  for(const e of m){let opts=P.filter(p=>p.r.includes(e.r)&&(!e.ids||e.ids.includes(p.id))&&!(e.no||[]).includes(p.id));if(e.pref&&opts.some(p=>p.id===e.pref))opts=opts.filter(p=>p.id===e.pref);
+   if(!opts.length){if((e.x==="fix"||e.x==="F")&&!e.req)continue;acc=[];break}
+   acc=acc.flatMap(a=>opts.map(p=>[...a,{...e,p}]))}
+  acc.forEach(a=>{if(sans&&a.some(i=>i.x==="Q"&&i.p.id===sans))return;const s=resoudre(T,a);
+   const ok=!s.bad&&Math.abs(s.tot.p-T.p)<=Math.max(8,T.p*.2)&&Math.abs(s.tot.g-T.g)<=Math.max(15,T.g*.2)&&s.tot.l<=T.l+(slot==="dj"||slot==="dn"?12:8);
+   out.push({key:mi+":"+a.map(i=>i.p.id).join("+"),q:a.find(i=>i.x==="Q"),s,ok,ecart:Math.abs(s.tot.p-T.p)+Math.abs(s.tot.g-T.g)/2+Math.max(0,s.tot.l-T.l)})})});
+ const ok=out.filter(x=>x.ok).sort((a,b)=>a.key.localeCompare(b.key));
+ return ok.length?ok:out.filter(x=>!x.s.bad).sort((a,b)=>a.ecart-b.ecart).slice(0,3)}
+function idees(date){const {C,slots,T,R}=plan(date),off=(IDEES.date===date&&IDEES.off)||{},jn=diff("2026-01-01",date),res={};let qdj=null;
+ slots.forEach((k,i)=>{if(T[k].p+T[k].g<5){res[k]=null;return}
+  let L=combos(k,C.t,T[k],k==="dn"?qdj:null);if(!L.length&&k==="dn")L=combos(k,C.t,T[k],null);if(!L.length){res[k]=null;return}
+  const pick=L[((jn*7+i*3+(off[k]||0))%L.length+L.length)%L.length];if(k==="dj"&&pick.q)qdj=pick.q.p.id;res[k]={...pick,n:L.length,T:T[k]}});
+ return {C,slots,res,R}}
+const nf=n=>fr(Math.round(n),0);
+function qte(p,g){if(p.u){const k=Math.round(g/p.u);return `<b>${k}</b> × ${esc(p.n)}`}
+ const x=p.ud?Math.round(g/p.ud*2)/2:0;return `<b>${nf(g)} g</b> ${esc(p.n)}${x?` <span class="muted">(${fr(x,x%1?1:0)} ${esc(p.un)}${x>1&&!/\.$/.test(p.un)?"s":""})</span>`:""}`}
+function macroLine(t){return `${nf(t.kcal)} kcal · P ${nf(t.p)} g · G ${nf(t.g)} g · L ${nf(t.l)} g`}
+function barre(lbl,v,c){const pc=c>0?Math.min(100,v/c*100):0,over=v>c*1.05;
+ return `<div><small>${lbl}</small><b class="num">${nf(v)}</b><small class="num">sur ${nf(c)}</small><div class="meter"><span style="width:${pc}%;${over?"background:var(--miss)":""}"></span></div></div>`}
+function raccourciHTML(){return `<details class="rdet" data-d="rac"><summary>Créer le raccourci « Repas MFP » (une fois)</summary>
+ <ol class="proto small">
+  <li>Dans MyFitnessPal : <b>Plus › Applis et appareils › Santé</b>, autorise l'écriture des calories et macronutriments.</li>
+  <li>App <b>Raccourcis</b> › <b>+</b> › nomme-le « Repas MFP ».</li>
+  <li>Ajoute l'action <b>Rechercher des échantillons de santé</b> (tape « santé » dans la recherche) : type <b>Énergie alimentaire</b>, filtre <b>Date de début · est aujourd'hui</b>, unité kcal.</li>
+  <li>Ajoute <b>Calculer des statistiques</b> › <b>Somme</b>.</li>
+  <li>Refais les deux actions pour <b>Protéines</b>, <b>Glucides</b> et <b>Lipides totaux</b> (unité g).</li>
+  <li>Ajoute l'action <b>Texte</b> et écris : <code>REPAS kcal</code> [somme 1] <code>P</code> [somme 2] <code>G</code> [somme 3] <code>L</code> [somme 4] (les sommes s'insèrent en touchant les variables au-dessus du clavier).</li>
+  <li>Ajoute <b>Copier dans le presse-papiers</b>.</li>
+  <li>Mets le raccourci en widget sur l'écran d'accueil. Après un repas noté dans MFP : touche le widget, ouvre Prépa HYROX › Repas › <b>Importer</b>.</li>
+ </ol><p class="small muted">Je n'ai pas pu le tester sur un iPhone : si une étape n'a pas ce nom-là, envoie-moi une capture. Le texte copié ressemble à « REPAS kcal 1850 P 150 G 200 L 50 ».</p></details>`}
+function renderRepas(){const el=$("#v-repas");if(!el)return;const open=new Set([...el.querySelectorAll("details[open]")].map(d=>d.dataset.d));
+ const {C,slots,res,R}=idees(TODAY),r=REPAS[TODAY],dem=jourType(addD(TODAY,1)),jl=JOURSL[(parse(TODAY).getDay()+6)%7];
+ const tip=C.t==="gros"?"Glucides en plus aujourd'hui (+60 g) : collation riche en glucides 1h30 avant la séance (peu de gras, peu de fibres), puis protéines et glucides au repas d'après."
+  :C.t==="repos"?"Glucides en moins aujourd'hui (−40 g), protéines identiques : légumes à volonté pour tenir la faim."
+  :"Objectif MyFitnessPal tel quel. Protéines réparties sur les 4 repas.";
+ let h=`<div class="weekhead"><div class="t"><span class="eyebrow">Repas · ${jl} ${dm(TODAY)}</span><h1>${nf(C.kcal)} kcal</h1></div><span class="tag${C.t==="repos"?" muted":""}">${JT[C.t]}</span></div>
+ <div class="block"><div class="mac"><div><small>Protéines</small><b class="num">${C.p} g</b></div><div><small>Glucides</small><b class="num">${C.g} g</b></div><div><small>Lipides</small><b class="num">${C.l} g</b></div><div><small>Base MFP</small><b class="num">${nf(NUTRI.kcal)}</b></div></div>
+  <p class="small"><strong>${C.s.length?esc(C.s.join(" · ")):C.hors?"Programme pas encore écrit pour ce jour":"Pas de séance"}</strong> — ${tip}</p>
+  ${dem.t==="gros"&&C.t!=="gros"?`<p class="small muted">Demain, gros jour (${esc(dem.s.join(" · "))}) : garde un dîner bien chargé en glucides ce soir.</p>`:""}</div>`;
+ h+=`<div class="block"><div class="row between"><h2>MyFitnessPal</h2>${r?`<span class="muted small">importé à ${r.h.replace(":","h")}</span>`:""}</div>`;
+ if(r){h+=`<div class="mac">${barre("kcal",r.kcal,C.kcal)}${barre("Prot.",r.p,C.p)}${barre("Gluc.",r.g,C.g)}${barre("Lip.",r.l,C.l)}</div>
+  <p class="small">${R.p+R.g+R.l>0?`Reste : <strong>${nf(Math.max(0,C.kcal-r.kcal))} kcal</strong> · P ${nf(R.p)} g · G ${nf(R.g)} g · L ${nf(R.l)} g`:"Objectif du jour atteint."}${r.kcal>C.kcal*1.05?` <span style="color:var(--miss)">· ${nf(r.kcal-C.kcal)} kcal au-dessus</span>`:""}</p>
+  <div class="row small"><span class="muted">Déjà mangé :</span>${REPAS_SL.map(([k,n])=>`<button type="button" class="chipbtn" data-r="eat" data-k="${k}" aria-pressed="${(r.eat||[]).includes(k)}">${n.replace("Petit-déjeuner","Petit-déj")}</button>`).join("")}</div>`}
+ else h+=`<p class="small muted">Pas encore importé aujourd'hui. Note tes repas dans MFP, lance le raccourci, puis Importer.</p>`;
+ h+=`<div class="row"><button class="btn" data-r="imp">${r?"Mettre à jour":"Importer depuis MyFitnessPal"}</button>${r?`<button class="btn ghost" data-r="del">Effacer</button>`:""}</div>
+  ${REPAS_MSG?`<p class="small" style="color:var(--warn)">${esc(REPAS_MSG)}</p>`:""}
+  <details class="rdet" data-d="imp"><summary>Coller ou taper mes totaux</summary>
+   <div class="row"><input class="rin" style="flex:1 1 180px;width:auto" id="rpaste" placeholder="Colle ici : REPAS kcal … P … G … L …" autocomplete="off"><button class="btn ghost" data-r="paste">OK</button></div>
+   <div class="fgrid"><label class="small">kcal<input class="rin" id="rmk" inputmode="decimal"></label><label class="small">Prot. (g)<input class="rin" id="rmp" inputmode="decimal"></label><label class="small">Gluc. (g)<input class="rin" id="rmg" inputmode="decimal"></label><label class="small">Lip. (g)<input class="rin" id="rml" inputmode="decimal"></label></div>
+   <div><button class="btn ghost" data-r="man">Enregistrer</button></div></details>
+  ${raccourciHTML()}</div>`;
+ h+=`<div class="block"><h2>Idées de plats</h2><p class="small muted">${r?"Sur ce qu'il te reste, pour les repas pas encore mangés.":"Pour toute la journée, avec tes produits."} Grammes pesés crus.</p>`;
+ if(!slots.length)h+=`<p class="small">Tous les repas sont notés pour aujourd'hui.</p>`;
+ slots.forEach(k=>{const n=REPAS_SL.find(s=>s[0]===k)[1],x=res[k];
+  const tag=C.t==="gros"&&k==="co"?"avant la séance":C.t==="gros"&&k==="dn"?"après la séance":"";
+  h+=`<div class="meal"><div class="row between"><h3>${n}${tag?` <span class="chip">${tag}</span>`:""}</h3>${x&&x.n>1?`<button type="button" class="link" data-r="next" data-k="${k}">Autre idée</button>`:""}</div>`;
+  if(!x)h+=`<p class="small muted">${r?"Plus grand-chose à caser : un fruit ou rien.":"Ajoute des produits pour ce repas dans « Ma liste de courses »."}</p>`;
+  else h+=`<ul class="small">${x.s.items.map(i=>`<li>${qte(i.p,i.g)}</li>`).join("")}</ul><p class="small muted num">${macroLine(x.s.tot)} <span>(cible P ${nf(x.T.p)} · G ${nf(x.T.g)})</span></p>`;
+  h+=`</div>`});
+ h+=`</div>`;
+ const P=[...PRODS0,...(PRODU.add||[])],off=new Set(PRODU.off||[]);
+ h+=`<div class="block"><details class="rdet" data-d="prod"><summary>Ma liste de courses (${prods().length})</summary>
+  <p class="small muted">Valeurs moyennes pour 100 g. Envoie-moi en photo les étiquettes du yaourt protéiné, des wraps, de la whey et du chocolat en poudre : je mets les vraies. Décoche ce que tu n'as plus.</p>
+  ${P.map(p=>`<div class="prod"><label class="check small"><input type="checkbox" data-r="tog" data-k="${esc(p.id)}" ${off.has(p.id)?"":"checked"}><span><strong>${esc(p.n)}</strong><br><span class="muted num">${nf(p.kcal)} kcal · P ${fr(p.p)} · G ${fr(p.g)} · L ${fr(p.l)}</span></span></label>${p.mine?`<button type="button" class="link" data-r="rm" data-k="${esc(p.id)}">Retirer</button>`:""}</div>`).join("")}
+  <h3 style="margin-top:8px">Ajouter un produit</h3>
+  <label class="small">Nom<input class="rin" id="pn" placeholder="ex. skyr vanille Milbona"></label>
+  <label class="small">Type<select class="rin" id="pt">${PTYPES.map(([k,n])=>`<option value="${k}">${esc(n)}</option>`).join("")}</select></label>
+  <div class="fgrid"><label class="small">kcal<input class="rin" id="pk" inputmode="decimal"></label><label class="small">Prot.<input class="rin" id="pp" inputmode="decimal"></label><label class="small">Gluc.<input class="rin" id="pg" inputmode="decimal"></label><label class="small">Lip.<input class="rin" id="pl" inputmode="decimal"></label></div>
+  <label class="small">Poids d'une unité en g (facultatif : un œuf, une tranche…)<input class="rin" id="pu" inputmode="decimal"></label>
+  <div><button class="btn ghost" data-r="add">Ajouter</button></div></details></div>`;
+ h+=`<div class="block"><details class="rdet" data-d="obj"><summary>Mon objectif MyFitnessPal</summary>
+  <div class="fgrid"><label class="small">kcal<input class="rin" id="nk" inputmode="numeric" value="${NUTRI.kcal}"></label><label class="small">% gluc.<input class="rin" id="ng" inputmode="numeric" value="${NUTRI.g}"></label><label class="small">% prot.<input class="rin" id="np" inputmode="numeric" value="${NUTRI.p}"></label><label class="small">% lip.<input class="rin" id="nl" inputmode="numeric" value="${NUTRI.l}"></label></div>
+  <div><button class="btn ghost" data-r="obj">Enregistrer</button></div>
+  <p class="small muted">Gros jour (box, run HYROX, run d'une heure ou plus, deux séances) : +60 g de glucides. Repos : −40 g. Protéines et lipides fixes.</p>
+  <p class="small muted">${nf(NUTRI.kcal)} kcal avec ta charge d'entraînement, c'est un vrai déficit : vise 0,5 à 0,8 kg de perte par semaine. Si tu perds plus vite ou si tes séances s'effondrent, remonte de 150 à 200 kcal.</p></details></div>
+ <p class="small muted">Tes repas restent sur ce téléphone : rien n'est envoyé sur le site.</p>`;
+ el.innerHTML=h;el.querySelectorAll("details[data-d]").forEach(d=>{if(open.has(d.dataset.d))d.open=true})}
+function repasClick(e){const b=e.target.closest("[data-r]");if(!b||b.tagName==="INPUT"&&b.type!=="checkbox")return;const a=b.dataset.r,k=b.dataset.k,v=id=>{const x=$("#"+id);return x?x.value.trim():""},num=s=>parseFloat(String(s).replace(",","."));
+ if(a==="imp")return importerMFP();
+ if(a==="del"){delete REPAS[TODAY];sv("prepa-repas",REPAS);return renderRepas()}
+ if(a==="paste"){const r=parseRepas(v("rpaste"));if(!r){REPAS_MSG="Texte illisible : il doit ressembler à « REPAS kcal 1850 P 150 G 200 L 50 ».";return renderRepas()}return saveImport(r,"collé")}
+ if(a==="man"){const r={kcal:num(v("rmk")),p:num(v("rmp")),g:num(v("rmg")),l:num(v("rml"))};
+  if(![r.kcal,r.p,r.g,r.l].every(x=>isFinite(x)&&x>=0)){REPAS_MSG="Remplis les 4 cases (kcal, protéines, glucides, lipides).";return renderRepas()}return saveImport(r,"à la main")}
+ if(a==="eat"){const r=REPAS[TODAY];if(!r)return;const s=new Set(r.eat||[]);s.has(k)?s.delete(k):s.add(k);r.eat=REPAS_SL.map(x=>x[0]).filter(x=>s.has(x));sv("prepa-repas",REPAS);return renderRepas()}
+ if(a==="next"){if(IDEES.date!==TODAY)IDEES={date:TODAY,off:{}};IDEES.off[k]=(IDEES.off[k]||0)+1;sv("prepa-idees",IDEES);return renderRepas()}
+ if(a==="tog"){const s=new Set(PRODU.off||[]);b.checked?s.delete(k):s.add(k);PRODU.off=[...s];sv("prepa-produits",PRODU);return renderRepas()}
+ if(a==="rm"){PRODU.add=(PRODU.add||[]).filter(p=>p.id!==k);PRODU.off=(PRODU.off||[]).filter(x=>x!==k);sv("prepa-produits",PRODU);return renderRepas()}
+ if(a==="add"){const n=v("pn"),t=PTYPES.find(x=>x[0]===v("pt")),m=[num(v("pk")),num(v("pp")),num(v("pg")),num(v("pl"))],u=num(v("pu"));
+  if(!n||!m.every(x=>isFinite(x)&&x>=0)){REPAS_MSG="";alertProd("Donne un nom et les 4 valeurs pour 100 g.");return}
+  const p=P0("u"+Date.now().toString(36),n.slice(0,60),t?t[2]:[],...m,{mine:true,mx:t&&["fec"].includes(t[0])?300:400});if(isFinite(u)&&u>0)p.u=Math.round(u);
+  PRODU.add=[...(PRODU.add||[]),p];sv("prepa-produits",PRODU);return renderRepas()}
+ if(a==="obj"){const o={kcal:Math.round(num(v("nk"))),g:num(v("ng")),p:num(v("np")),l:num(v("nl"))};
+  if(!(o.kcal>=1200&&o.kcal<=6000)||Math.abs(o.g+o.p+o.l-100)>0.5){alertProd("kcal entre 1 200 et 6 000, et les 3 % doivent faire 100.","nk");return}
+  NUTRI=o;sv("prepa-nutri",NUTRI);return renderRepas()}}
+function alertProd(t,id){const x=$("#"+(id||"pn"));const p=x&&x.closest("details");if(!p)return;let m=p.querySelector(".rmsg");if(!m){m=document.createElement("p");m.className="small rmsg";m.style.color="var(--miss)";p.appendChild(m)}m.textContent=t}
 
 /* ================= Vue Salle (checklists, état gardé sur cet appareil) ================= */
 const L=(n,k)=>({n,k});
@@ -1589,7 +1825,8 @@ function renderSaved(){
  el.innerHTML=`<h3>Séances enregistrées</h3>${SEANCES.slice(0,6).map(s=>`<details><summary><span class="num">${dm(s.date)}</span>&nbsp;·&nbsp;${esc(s.titre)}</summary><ul class="small" style="margin:0 0 8px;padding-left:20px">${(s.lignes||[]).map(l=>`<li>${esc(l)}</li>`).join("")}</ul></details>`).join("")}`}
 
 /* ================= Rendu global ================= */
-function renderAll(){renderSemaine();renderCourse();renderObjectif();renderSaved()}
+function renderAll(){renderSemaine();renderCourse();renderRepas();renderObjectif();renderSaved()}
+$("#v-repas").addEventListener("click",repasClick);
 function bindApprove(){}
 show(VIEW);renderSalle();renderAll();
 fetch("data.json",{cache:"no-store"}).then(r=>r.json()).then(d=>{SNAP=d.strava||null;EF=d.ef||null;BOX=d.box||null;COACH=d.coach||null;MAJ=d.maj||null;PROG_SRV=Array.isArray(d.programme)?d.programme:[];BOXKM_SRV=d.boxkm||{};REMPL=d.remplace||{};ABS_SRV=Array.isArray(d.absences)?d.absences:[];KCACHE.clear();renderAll()}).catch(()=>renderAll());
