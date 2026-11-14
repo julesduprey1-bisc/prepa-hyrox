@@ -410,7 +410,7 @@ const SLOT_NOM={run1:"EF de milieu de semaine",run2:"EF du samedi",run3:"EF long
 const NOTE_SLOT={0:"push",1:"box1",2:"pull",3:"box2",4:"legs",5:"run2",6:"run3"}; // notes du programme : jour d'origine → séance
 const TYPES={kine:{l:"Kiné",it:{k:"kine",t:"Kiné",lock:true}},box:{l:"Box",it:{k:"box",t:"Box HYROX",lock:true}},ef:{l:"EF",it:{k:"run",t:"EF"}},
  push:{l:"Push",it:{k:"muscu",salle:"push",t:"Push + abdos"}},pull:{l:"Pull",it:{k:"muscu",salle:"pull",t:"Pull + abdos"}},
- legs:{l:"Jambes",it:{k:"muscu",salle:"legs",t:"Jambes + épaules"}},full:{l:"Full body salle",it:{k:"muscu",salle:"full",t:"Full body",sub:"En salle, tout le corps, environ 75'"}},fullpdc:{l:"Full body sans salle",it:{k:"muscu",salle:"fullpdc",t:"Full body sans salle",sub:"Poids du corps, environ 40'"}},marche:{l:"Marche",it:{k:"marche",t:"Marche"}},hyx:{l:"Run HYROX sans salle",it:{k:"run",hyx:true,t:"Run HYROX sans salle",min:40}}};
+ legs:{l:"Jambes",it:{k:"muscu",salle:"legs",t:"Jambes + épaules"}},full:{l:"Full body salle",it:{k:"muscu",salle:"full",t:"Full body",sub:"En salle, tout le corps, environ 80'"}},fullpdc:{l:"Full body sans salle",it:{k:"muscu",salle:"fullpdc",t:"Full body sans salle",sub:"Poids du corps, environ 40'"}},marche:{l:"Marche",it:{k:"marche",t:"Marche"}},hyx:{l:"Run HYROX sans salle",it:{k:"run",hyx:true,t:"Run HYROX sans salle",min:40}}};
 const RANK={kine:0,muscu:1,run:2,marche:3,box:4,repos:9};
 let MODS=ld("prepa-modifs",{}),EDIT=null,CONFIRM=null,ADD=null,ADD_REC=false,DET=null;
 let PROG=ld("prepa-programme",[]),PROG_SRV=[];
@@ -836,7 +836,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis, repas importés, séances déplacées, annulées ou ajoutées des 7 derniers jours et ta semaine type, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 45 · 14/11</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 46 · 14/11</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -1412,8 +1412,7 @@ const CAT={
   X("rdl","Soulevé de terre roumain","Poids total (barre ou haltères). Jambes presque tendues, dos neutre, descends jusqu'aux genoux, poussée de hanches.",[L("",5)],[50],10),
   X("sdt-sumo","Soulevé de terre sumo","Pieds larges, prise entre les jambes, buste plus droit. Poids total.",[L("",5)],[70],8),
   X("hip-thrust-sdt","Hip thrust","Poids total, barre comprise, pause 1 s en haut : rien sur le bas du dos.",[L("",10)],[60],10),
-  X("kb-swing","Kettlebell swing","Charnière de hanche explosive, bras relâchés : la poussée vient des fessiers.",[L("",4)],[24],15),
-  X("leg-curl-sdt","Leg curl","Chiffre de la machine, descente lente.",[L("",5)],[40],12)],
+  X("kb-swing","Kettlebell swing","Charnière de hanche explosive, bras relâchés : la poussée vient des fessiers.",[L("",4)],[24],15)],/* v46 : « Leg curl » retiré d'ici, il a sa place dans le Full body juste après le soulevé de terre */
  "pdc-jambes":[
   X("squat-sumo","Squat sumo","Pieds larges, pointes ouvertes, descente contrôlée.",[],[],25),
   X("bulgare-chaise","Squat bulgare pied sur une chaise","Reps par jambe, buste droit.",[],[],12),
@@ -1461,6 +1460,7 @@ const CAT={
 const rep=(kg,r,n)=>Array.from({length:n},()=>[kg,r]);
 /* 14/11 (v45) : reps par partie de série (charge ET reps pour chaque partie d'un même tour), ex. leg curl une jambe puis deux */
 const repP=(kg,rr,n)=>Array.from({length:n},()=>[kg,null,rr]);
+const LEG_CURL2={g:"ischios",k:"leg-curl",t:"Leg curl",tour:true,rest:"1'30 entre les tours",h:"Dans le même tour : une jambe puis l’autre (charge et reps par jambe), puis les 2 jambes ensemble avec leur charge, sans repos entre les parties. Chiffre affiché sur la machine, descente lente.",l:[L("Par jambe",2.5),L("2 jambes",5)],s:repP([20,40],[10,10],3)};
 const CARDIO={opt:true,g:"cardio",k:"marche",t:"Cardio : marche inclinée",rest:"aucun — effort continu",h:"45 à 60 min, FC 125–140. Pente 8–12 %, 5–5,5 km/h. Les jours où une EF est prévue, elle passe avant.",l:[],u:"min",rs:5,s:[[[],45]]};
 /* 28/10 (v36) : circuit abdos de Jules — planche, gainage latéral, hollow, dead bug ; 3 à 4 tours, 3 fois par semaine (fin de Push, Pull, Jambes) */
 const ABS={opt:true,g:"abdos",k:"circuit",t:"Circuit abdos",rest:"1' entre les tours",h:"Les 4 exercices à la suite sans repos, puis 1' de repos. 3 tours, 4 si tu es frais (+ Ajouter un tour). Bas du dos plaqué ou neutre du début à la fin. Quand tout passe facilement : +15 s sur chaque gainage.",
@@ -1497,7 +1497,7 @@ const S={
  legsA:{name:"Jambes A",title:"Jambes A — squat / épaules",ex:[
   {g:"quadris",k:"squat",t:"Squat",rest:"2'30",h:"Poids total, barre comprise. Charge axiale : commence léger, stop si le lombaire tire.",l:[L("",5)],s:rep([60],8,4)},
   {g:"fentes",k:"fentes-marchees",t:"Fentes marchées lestées",rest:"1'30",h:"Poids d’un haltère (un dans chaque main). Reps = nombre de pas.",l:[L("",0.5)],s:rep([16],20,3)},
-  {g:"ischios",k:"leg-curl",t:"Leg curl",tour:true,rest:"1'30 entre les tours",h:"Dans le même tour : une jambe puis l’autre (charge et reps par jambe), puis les 2 jambes ensemble avec leur charge, sans repos entre les parties. Chiffre affiché sur la machine, descente lente.",l:[L("Par jambe",2.5),L("2 jambes",5)],s:repP([20,40],[10,10],3)},
+  {...LEG_CURL2},
   {g:"adducteurs",k:"adducteurs-machine",t:"Adducteurs machine",rest:"1'",h:"Chiffre affiché sur la machine. Amplitude contrôlée, pas de rebond en ouverture.",l:[L("",5)],s:rep([40],12,3)},
   {g:"epaules",k:"militaire",t:"Développé militaire",rest:"2'",h:"Haltères : poids d’un haltère. Barre : poids total. Reste gainé.",l:[L("",0.5)],s:rep([20],8,4)},
   {...LAT_DEG,s:rep([8,6,4],10,3)},
@@ -1519,6 +1519,7 @@ const S={
   {g:"quadris",k:"squat",t:"Squat",rest:"2'30",h:"Poids total, barre comprise. 2 séries d'échauffement (barre à vide puis 40 kg). Descends à la parallèle, dos neutre ; si le bas du dos tire : presse à cuisses (dans la liste).",l:[L("",5)],s:rep([60],8,3)},
   {g:"pecs",k:"couche-halteres",t:"Développé couché haltères",rest:"2'",h:"Charge par haltère. Omoplates serrées, garde 2 reps en réserve. Chest press machine dans la liste.",l:[L("",0.5)],s:[[[30],10],[[32],8],[[32],8]]},
   {g:"souleve",k:"sdt",t:"Soulevé de terre",rest:"2'30",h:"Poids total, barre comprise. Barre contre les tibias, dos neutre, pousse le sol avec les jambes ; 2 séries d'échauffement avant. Commence léger : si le bas du dos tire, passe au trap bar ou au hip thrust (dans la liste).",l:[L("",5)],s:rep([70],8,3)},
+  {...LEG_CURL2},
   {g:"dos-largeur",k:"tirage-vertical",t:"Tirage vertical",rest:"1'30",h:"Chiffre de la colonne, prise large, tire vers le haut de la poitrine.",l:[L("",5)],s:rep([55],10,3)},
   {g:"epaules",k:"push-press-technogym",t:"Push press machine Technogym",rest:"1'30",h:"Machine à disques : charge = disques chargés sur chaque bras (les deux bras pareil). Une série = 10 bras droit, 10 bras gauche, puis 10 à deux bras : 30 reps, à saisir au total. Dos collé au dossier, poignées à hauteur d'épaules, pousse sans verrouiller les coudes, descente en 2 s. Les 10 à deux bras sont les plus durs : prends une charge qui t'y laisse 1 à 2 reps en réserve.",l:[L("",2.5)],s:rep([10],30,2)},
   {...BUCHERON3,s:rep([30],10,3)},
@@ -1633,6 +1634,14 @@ if(!st.legsV45){const x=st.legsA;
  if(x&&x.val&&x.val[2])for(const j in x.val[2]){const v=x.val[2][j];
   if(v&&Array.isArray(v.kg)&&v.kg.length===1){const k=v.kg[0];x.val[2][j]={kg:[Math.round(k/2/2.5)*2.5,k],r:null,rr:[10,v.r!=null?v.r:10]}}}
  st.legsV45=true;sv("salle-v4",st)}
+/* 14/11 (v46) : leg curl en deux parties aussi dans le Full body (« Il le faut aussi dans full body », Jules), juste après le
+   soulevé de terre → saisies décalées à partir du tirage vertical. Le « Leg curl » qu'on pouvait choisir à la place du soulevé de
+   terre disparaît de la liste : ses charges passent au nouveau leg curl (une jambe = moitié arrondie à 2,5 kg, 10 reps). */
+if(!st.fullV46){remapSeance("full",{0:0,1:1,2:2,3:3,4:5,5:6,6:7,7:8,8:9,9:10,10:11});
+ const x=st.full,V=x&&x.vx&&x.vx["3|leg-curl-sdt"];
+ if(V&&!(x.val&&x.val[4])){const nv={};for(const j in V){const v=V[j];if(v&&Array.isArray(v.kg)&&v.kg.length===1){const k=v.kg[0];nv[j]={kg:[Math.round(k/2/2.5)*2.5,k],r:null,rr:[10,v.r!=null?v.r:10]}}}
+  if(Object.keys(nv).length){x.val=x.val||{};x.val[4]=nv}}
+ st.fullV46=true;sv("salle-v4",st)}
 function recapLinesFor(id,date){const x=st[id],H=(x.hist||{})[date]||{},sk=(x.skip&&x.skip.date===date)?x.skip.m:{},xm=(x.extra&&x.extra.date===date)?x.extra.m:{},done=new Set(x.done||[]);
  return slots(id).map(i=>{const k=H[i]||exDef(id,i).k,ex=exFor(id,i,k);if(sk[i]===true)return ex.t+" : non fait";
   const sets=Array.from({length:ex.s.length+(xm[i]||0)},(_,j)=>done.has(i+"-"+j)?summary(ex,valFor(id,i,j,k)):"").filter(Boolean);
@@ -1669,7 +1678,7 @@ function pickKey(id,i){const ex=exDef(id,i),p=st[id].pick;
 function exAt(id,i){return exFor(id,i,pickKey(id,i))}
 function exFor(id,i,k){const ex=exDef(id,i);if(!k||k===ex.k)return ex;
  const e=(CAT[ex.g]||[]).find(x=>x.k===k);if(!e)return ex;
- return {...e,g:ex.g,rest:e.rest||ex.rest,s:ex.s.map(([kg,r])=>[(e.d||[]).slice(),e.r!==undefined?e.r:r])}}
+ return {...e,g:ex.g,rest:e.rest||ex.rest,s:ex.s.map(([kg,r])=>e.rr?[(e.d||[]).slice(),null,e.rr.slice()]:[(e.d||[]).slice(),e.r!==undefined?e.r:r])}}
 function setPick(id,i,k){const x=st[id];if(!x.pick||x.pick.date!==TODAY)x.pick={date:TODAY,m:{}};x.pick.m[i]=k;
  x.done=(x.done||[]).filter(d=>String(d).split("-")[0]!==String(i));saveSt();renderSalle()}
 function noteHist(id,i){const x=st[id];x.hist=x.hist||{};(x.hist[TODAY]=x.hist[TODAY]||{})[i]=pickKey(id,i);
