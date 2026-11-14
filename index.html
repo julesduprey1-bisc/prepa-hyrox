@@ -410,7 +410,7 @@ const SLOT_NOM={run1:"EF de milieu de semaine",run2:"EF du samedi",run3:"EF long
 const NOTE_SLOT={0:"push",1:"box1",2:"pull",3:"box2",4:"legs",5:"run2",6:"run3"}; // notes du programme : jour d'origine → séance
 const TYPES={kine:{l:"Kiné",it:{k:"kine",t:"Kiné",lock:true}},box:{l:"Box",it:{k:"box",t:"Box HYROX",lock:true}},ef:{l:"EF",it:{k:"run",t:"EF"}},
  push:{l:"Push",it:{k:"muscu",salle:"push",t:"Push + abdos"}},pull:{l:"Pull",it:{k:"muscu",salle:"pull",t:"Pull + abdos"}},
- legs:{l:"Jambes",it:{k:"muscu",salle:"legs",t:"Jambes + épaules"}},full:{l:"Full body salle",it:{k:"muscu",salle:"full",t:"Full body",sub:"En salle, tout le corps, environ 85'"}},fullpdc:{l:"Full body sans salle",it:{k:"muscu",salle:"fullpdc",t:"Full body sans salle",sub:"Poids du corps, environ 40'"}},marche:{l:"Marche",it:{k:"marche",t:"Marche"}},hyx:{l:"Run HYROX sans salle",it:{k:"run",hyx:true,t:"Run HYROX sans salle",min:40}}};
+ legs:{l:"Jambes",it:{k:"muscu",salle:"legs",t:"Jambes + épaules"}},full:{l:"Full body salle",it:{k:"muscu",salle:"full",t:"Full body",sub:"En salle, tout le corps, environ 95'"}},fullpdc:{l:"Full body sans salle",it:{k:"muscu",salle:"fullpdc",t:"Full body sans salle",sub:"Poids du corps, environ 40'"}},marche:{l:"Marche",it:{k:"marche",t:"Marche"}},hyx:{l:"Run HYROX sans salle",it:{k:"run",hyx:true,t:"Run HYROX sans salle",min:40}}};
 const RANK={kine:0,muscu:1,run:2,marche:3,box:4,repos:9};
 let MODS=ld("prepa-modifs",{}),EDIT=null,CONFIRM=null,ADD=null,ADD_REC=false,DET=null;
 let PROG=ld("prepa-programme",[]),PROG_SRV=[];
@@ -836,7 +836,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis, repas importés, séances déplacées, annulées ou ajoutées des 7 derniers jours et ta semaine type, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 47 · 14/11</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 48 · 14/11</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -1380,6 +1380,7 @@ const CAT={
   X("adducteurs-poulie","Adducteurs poulie","Sangle à la cheville, chiffre de la colonne, reps par jambe.",[L("",2.5)],[10],12),
   X("abducteurs","Abducteurs machine","Chiffre de la machine : moyen fessier, stabilité du genou.",[L("",5)],[40],15)],
  "epaules":[
+  X("tirage-menton-ez","Tirage menton barre EZ","Poids total, barre comprise. Prise à largeur d’épaules, coudes jusqu’à hauteur d’épaules, pas plus haut.",[L("",2.5)],[20],12),
   X("dev-halteres","Développé haltères assis","Charge par haltère, dossier droit.",[L("",0.5)],[18],10),
   X("arnold","Arnold press","Charge par haltère, rotation des paumes pendant la montée.",[L("",0.5)],[14],10),
   X("dev-machine","Développé épaules machine","Chiffre de la machine.",[L("",5)],[30],10),
@@ -1462,6 +1463,11 @@ const rep=(kg,r,n)=>Array.from({length:n},()=>[kg,r]);
 /* 14/11 (v45) : reps par partie de série (charge ET reps pour chaque partie d'un même tour), ex. leg curl une jambe puis deux */
 const repP=(kg,rr,n)=>Array.from({length:n},()=>[kg,null,rr]);
 const LEG_CURL2={g:"ischios",k:"leg-curl",t:"Leg curl",tour:true,rest:"1'30 entre les tours",h:"Dans le même tour : une jambe puis l’autre (charge et reps par jambe), puis les 2 jambes ensemble avec leur charge, sans repos entre les parties. Chiffre affiché sur la machine, descente lente.",l:[L("Par jambe",2.5),L("2 jambes",5)],s:repP([20,40],[10,10],3)};
+/* 14/11 (v48) : superset épaules et tirage menton barre EZ, demandés par Jules pour les jours épaules (Jambes A et B) et le Full
+   body : élévations frontales assis haltères sur 2 charges puis latérales debout sur 2 charges, charge et reps pour chacune ;
+   tirage menton à la fin « pour se fumer les épaules ». */
+const SS_EPAULES={g:"epaules",k:"ss-epaules",t:"Superset épaules",rest:"1'30 entre les tours",h:"Élévations frontales assis, haltères : charge 1 puis charge 2 sans repos, puis élévations latérales debout : charge 1 puis charge 2. Charge d’un haltère. Pas d’élan, monte à hauteur d’épaules, descente lente.",l:[L("Frontale 1",0.5),L("Frontale 2",0.5),L("Latérale 1",0.5),L("Latérale 2",0.5)],s:repP([10,8,8,6],[10,10,10,10],3)};
+const TIRAGE_MENTON={g:"epaules",k:"tirage-menton-ez",t:"Tirage menton barre EZ",rest:"1'",h:"Pour finir les épaules. Poids total, barre comprise. Prise à largeur d’épaules, pas serrée ; les coudes montent jusqu’à hauteur d’épaules, pas plus haut. Si l’avant de l’épaule pince : prise plus large, ou arrête.",l:[L("",2.5)],s:rep([20],12,3)};
 const CARDIO={opt:true,g:"cardio",k:"marche",t:"Cardio : marche inclinée",rest:"aucun — effort continu",h:"45 à 60 min, FC 125–140. Pente 8–12 %, 5–5,5 km/h. Les jours où une EF est prévue, elle passe avant.",l:[],u:"min",rs:5,s:[[[],45]]};
 /* 28/10 (v36) : circuit abdos de Jules — planche, gainage latéral, hollow, dead bug ; 3 à 4 tours, 3 fois par semaine (fin de Push, Pull, Jambes) */
 const ABS={opt:true,g:"abdos",k:"circuit",t:"Circuit abdos",rest:"1' entre les tours",h:"Les 4 exercices à la suite sans repos, puis 1' de repos. 3 tours, 4 si tu es frais (+ Ajouter un tour). Bas du dos plaqué ou neutre du début à la fin. Quand tout passe facilement : +15 s sur chaque gainage.",
@@ -1502,6 +1508,8 @@ const S={
   {g:"adducteurs",k:"adducteurs-machine",t:"Adducteurs machine",rest:"1'",h:"Chiffre affiché sur la machine. Amplitude contrôlée, pas de rebond en ouverture.",l:[L("",5)],s:rep([40],12,3)},
   {g:"epaules",k:"militaire",t:"Développé militaire",rest:"2'",h:"Haltères : poids d’un haltère. Barre : poids total. Reste gainé.",l:[L("",0.5)],s:rep([20],8,4)},
   {...LAT_DEG,s:rep([8,6,4],10,3)},
+  {...SS_EPAULES},
+  {...TIRAGE_MENTON},
   {g:"mollets",k:"mollets-unilat",t:"Montées de mollets unilatérales",rest:"45\"",h:"Reps par jambe, lent. Pour les tibias et les tendons.",l:[],s:rep([],10,3)},
   CARDIO,
   ABS]},
@@ -1512,6 +1520,8 @@ const S={
   {g:"fessiers",k:"hip-thrust",t:"Hip thrust",rest:"1'30",h:"Poids total, barre comprise. Pause 1 s en haut.",l:[L("",10)],s:rep([60],10,3)},
   {g:"quadris-iso",k:"leg-extension",t:"Leg extension",rest:"1'",h:"Chiffre affiché sur la machine. Si le genou proteste, limite la fin d'extension.",l:[L("",5)],s:rep([40],12,3)},
   {...LAT_DEG,s:rep([8,6,4],10,3)},
+  {...SS_EPAULES},
+  {...TIRAGE_MENTON},
   {g:"mollets",k:"mollets-unilat",t:"Montées de mollets unilatérales",rest:"45\"",h:"Reps par jambe, lent.",l:[],s:rep([],10,3)},
   CARDIO,
   ABS]},
@@ -1527,6 +1537,8 @@ const S={
   {...BUCHERON3,s:rep([30],10,3)},
   {g:"dos-epaisseur",k:"tirage-horizontal",t:"Rowing assis à la poulie",rest:"1'30",h:"Chiffre de la colonne. Buste droit, tire vers le nombril, omoplates serrées 1 s. Pressé : mets Non ici, le bûcheron a déjà travaillé le dos.",l:[L("",5)],s:rep([55],10,2)},
   {...LAT_DEG,s:rep([8,6,4],10,3)},
+  {...SS_EPAULES},
+  {...TIRAGE_MENTON},
   {g:"abdos",k:"gainage-fb",t:"Gainage",rest:"1'",h:"Planche sur les avant-bras, corps aligné, fessiers serrés. Si tu fais le circuit abdos juste après : mets Non ici, la planche y est déjà.",l:[],u:"s",rs:5,s:rep([],40,3)},
   {...ABS,off:true}]},
  fullpdc:{name:"Sans salle",title:"Full body sans salle — poids du corps",ex:[
@@ -1647,6 +1659,10 @@ if(!st.fullV46){remapSeance("full",{0:0,1:1,2:2,3:3,4:5,5:6,6:7,7:8,8:9,9:10,10:
 /* 14/11 (v47) : hip thrust au sol (disque ou KB sur le bassin) dans le Full body, juste après le leg curl (demande de Jules pendant
    sa séance) → saisies décalées à partir du tirage vertical. */
 if(!st.fullV47){remapSeance("full",{0:0,1:1,2:2,3:3,4:4,5:6,6:7,7:8,8:9,9:10,10:11,11:12});st.fullV47=true;sv("salle-v4",st)}
+/* 14/11 (v48) : superset épaules + tirage menton insérés après les élévations latérales dégressives → saisies décalées ensuite
+   (Jambes A et B : mollets, cardio, abdos ; Full body : gainage, circuit abdos). */
+if(!st.shV48){const m={0:0,1:1,2:2,3:3,4:4,5:5,6:8,7:9,8:10};remapSeance("legsA",m);remapSeance("legsB",m);
+ remapSeance("full",{0:0,1:1,2:2,3:3,4:4,5:5,6:6,7:7,8:8,9:9,10:10,11:13,12:14});st.shV48=true;sv("salle-v4",st)}
 function recapLinesFor(id,date){const x=st[id],H=(x.hist||{})[date]||{},sk=(x.skip&&x.skip.date===date)?x.skip.m:{},xm=(x.extra&&x.extra.date===date)?x.extra.m:{},done=new Set(x.done||[]);
  return slots(id).map(i=>{const k=H[i]||exDef(id,i).k,ex=exFor(id,i,k);if(sk[i]===true)return ex.t+" : non fait";
   const sets=Array.from({length:ex.s.length+(xm[i]||0)},(_,j)=>done.has(i+"-"+j)?summary(ex,valFor(id,i,j,k)):"").filter(Boolean);
