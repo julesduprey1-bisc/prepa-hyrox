@@ -1,9 +1,20 @@
 {
- "maj": "2026-11-14T21:55",
+ "maj": "2026-11-15T21:55",
  "strava": {
-  "maj": "2026-11-14T21:55",
+  "maj": "2026-11-15T21:55",
   "source": "Strava list_activities, du 01/07 au 12/10/2026",
   "items": [
+   {
+    "id": "20999029046",
+    "n": "Marche dans l'après-midi",
+    "t": "Walk",
+    "d": "2026-11-15",
+    "h": "15:29",
+    "km": 2.8,
+    "min": 40.5,
+    "re": 4,
+    "s": null
+   },
    {
     "id": "20983702956",
     "n": "FULL BODY EN SALLE 🔥",
