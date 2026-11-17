@@ -1,9 +1,20 @@
 {
- "maj": "2026-11-16T21:54",
+ "maj": "2026-11-17T21:55",
  "strava": {
-  "maj": "2026-11-16T21:54",
+  "maj": "2026-11-17T21:55",
   "source": "Strava list_activities, du 01/07 au 12/10/2026",
   "items": [
+   {
+    "id": "21024554137",
+    "n": "HIIT en soirée",
+    "t": "HighIntensityIntervalTraining",
+    "d": "2026-11-17",
+    "h": "18:27",
+    "km": 0.0,
+    "min": 49.5,
+    "re": 72,
+    "s": null
+   },
    {
     "id": "20999029046",
     "n": "Marche dans l'après-midi",
