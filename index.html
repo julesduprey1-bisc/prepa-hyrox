@@ -836,7 +836,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis, repas importés, séances déplacées, annulées ou ajoutées des 7 derniers jours et ta semaine type, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 48 · 14/11</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 49 · 18/11</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -1335,7 +1335,8 @@ const CAT={
  "dos-unilat":[
   X("bucheron-genou","Rowing bûcheron genou sur le banc","Poids d’un haltère. Un genou et une main sur le banc, l'autre pied au sol : le banc soutient le bas du dos. Reps par bras.",[L("",0.5)],[30],10),
   X("rowing-poulie-unilat","Rowing poulie unilatéral","Chiffre de la colonne, reps par bras.",[L("",2.5)],[20],12),
-  X("meadows","Meadows row","Barre calée dans un coin, prise d'un côté. Charge des disques, reps par bras.",[L("",2.5)],[20],10)],
+  /* 18/11 (v49) : nom et consigne revus d'après la photo de Jules (barre dans le pivot landmine au pied du rack) ; clé gardée */
+  X("meadows","Rowing unilatéral barre en pivot (landmine)","Barre calée dans le pivot au pied du rack, disques à l’autre bout. De profil à la barre, pieds décalés, buste penché, dos plat. Une main sur le manchon, juste derrière les disques : tire vers la hanche, coude près du corps, 1 s en haut, descente lente. Charge = les disques seulement. Reps par bras.",[L("",2.5)],[20],10)],
  "grip":[
   X("farmer-hold","Farmer hold","Debout avec deux haltères lourds, le plus longtemps possible. Charge par haltère.",[L("",0.5)],[32],45,SEC),
   X("serviette","Suspension serviette","Une serviette sur la barre dans chaque main : le grip du sled pull.",[],[],30,SEC),
