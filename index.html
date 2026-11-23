@@ -390,8 +390,8 @@ const WEEKS=[
     Strava S7 → S12 : 7 runs sur 12 prévus (mercredi 4/6, week-end 3/6 dont 0 sur les deux dernières semaines), S11 à 0 % et S12
     à 49 % de course pure (deux semaines sous 50 % → on réécrit le format et on repart sous le niveau de S12). Box 7/10, Pull 4/5,
     Push 2 fois (rien depuis le 24/10), Jambes jamais, Full body le samedi 2 fois, lundi et vendredi presque toujours vides.
-    → 2 runs (mercredi après la Pull, dimanche), 3e run le vendredi en S15 seulement si S13 et S14 sont à 80 % ; tempo en S17
-    seulement si S13 → S15 sont à 80 %. Semaine type : PROG0. */
+    → runs lundi (court), mercredi (lignes droites) et dimanche (long), tempo en S17 seulement si S13 → S15 sont à 80 % ;
+    salle : Push, Pull, Jambes gardées (demande de Jules), Full body si la semaine déraille. Semaine type : PROG0. */
  /* 23/11, juste après : « je veux un run le lundi » (Jules) → 3 runs : lundi court, mercredi + lignes droites, dimanche long ;
     le 3e run du vendredi de S15 disparaît (pas 4 runs). */
  {s:13,tag:"Nouveau départ",km:10.0,lun:{t:"EF 25'",min:25},mer:{t:"EF 30' + 6 lignes droites",min:30,ld:true},dim:{t:"EF 35'",min:35,long:true}},
@@ -420,11 +420,13 @@ const SLOTS0=[
  {id:"run3",d:6,k:"run",src:"dim",lock:true,sub:"La plus longue de la semaine"}
 ];
 const SLOT_NOM={run1:"EF de milieu de semaine",run2:"EF du samedi",run3:"EF longue du week-end"};
-/* 23/11 : semaine type calée sur ce que Jules fait vraiment : box mardi et jeudi, Pull + EF le mercredi, Full body le samedi (il y
-   remplace la Push et les Jambes, faites 2 fois et 0 fois en 6 semaines), EF longue le dimanche ; lundi et vendredi libres (Push en
-   bonus via « + Ajouter ») ; kiné mardi et jeudi par défaut, annulable (Jules, 23/11) ; run0 = EF du lundi (demande de Jules). Version
-   intégrée à l'app, de priorité plus basse que data.json « programme » et que la semaine type modifiée sur le téléphone. */
+/* 23/11 (v52) : semaine type à partir de S13. Jules garde ses 3 séances de salle (« dans ta prog on enlève presque toutes les
+   séances muscu ») : Push + EF le lundi (« je veux un run le lundi »), kiné + box mardi et jeudi (« kiné de base mais annulable »),
+   Pull + EF le mercredi, Jambes + épaules le vendredi, EF longue le dimanche, samedi libre. Le Full body reste la solution des
+   semaines qui déraillent (« Full body à la place de la muscu »). Version intégrée à l'app, de priorité plus basse que data.json
+   « programme » et que la semaine type modifiée sur le téléphone. */
 const PROG0=[{from:"2026-11-23",le:"2026-11-23",slots:[
+ {id:"push",d:0,k:"muscu",salle:"push",t:"Push + abdos",sub:"puis l'EF du lundi, sans marche inclinée",cut:1},
  {id:"run0",d:0,k:"run",src:"lun",lock:true},
  {id:"kine1",d:1,k:"kine",t:"Kiné",h:"10h30",lock:true},
  {id:"box1",d:1,k:"box",t:"Box HYROX",lock:true},
@@ -432,7 +434,8 @@ const PROG0=[{from:"2026-11-23",le:"2026-11-23",slots:[
  {id:"run1",d:2,k:"run",src:"mer",lock:true},
  {id:"kine2",d:3,k:"kine",t:"Kiné",h:"10h30",lock:true},
  {id:"box2",d:3,k:"box",t:"Box HYROX",lock:true},
- {id:"full",d:5,k:"muscu",salle:"full",t:"Full body",sub:"En salle : jambes, pecs, dos, épaules",cut:1},
+ {id:"legs",d:4,k:"muscu",salle:"legs",t:"Jambes + épaules",cut:3},
+ {id:"run2",d:5,k:"run",src:"sam",lock:true},
  {id:"run3",d:6,k:"run",src:"dim",lock:true,sub:"La plus longue de la semaine"}]}];
 const NOTE_SLOT={0:"push",1:"box1",2:"pull",3:"box2",4:"legs",5:"run2",6:"run3"}; // notes du programme : jour d'origine → séance
 const TYPES={kine:{l:"Kiné",it:{k:"kine",t:"Kiné",lock:true}},box:{l:"Box",it:{k:"box",t:"Box HYROX",lock:true}},ef:{l:"EF",it:{k:"run",t:"EF"}},
@@ -865,7 +868,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis, repas importés, séances déplacées, annulées ou ajoutées des 7 derniers jours et ta semaine type, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 51 · 23/11</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 52 · 23/11</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
