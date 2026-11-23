@@ -372,7 +372,7 @@ const SCR=document.getElementById("scroller");
 function ld(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
 function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 
-/* ================= Programme S7 → S12 (fixé le 12/10/2026) ================= */
+/* ================= Programme S7 → S12 (fixé le 12/10/2026), S13 → S16 (23/11/2026, d'après la régularité réelle) ================= */
 const EF_TXT="FC 130–140, plafond dur 142. Allure libre, ~8:00–8:30/km à la reprise.";
 const LD_TXT="En fin d'EF : 6 × 15 s rapides, récupération complète en marchant.";
 const REF_PROTO=["10' d'échauffement progressif","30' continues, FC tenue à 135 ± 3, sans regarder l'allure","Terrain plat, pas de vent","Attendu après 21 jours d'arrêt : indice entre 14,5 et 15,2 (16,20 le 09/09). C'est mécanique, pas une régression."];
@@ -385,7 +385,18 @@ const WEEKS=[
  {s:10,tag:"Construction",km:9.0,mer:{t:"EF 35' + 6 lignes droites",min:35,ld:true},dim:{t:"EF 40'",min:40}},
  {s:11,tag:"Décharge",km:6.5,mer:{t:"EF 25'",min:25},dim:{t:"EF 30'",min:30},
   notes:{1:"Décharge : on réduit, on ne supprime pas.",3:"Décharge : on réduit, on ne supprime pas."}},
- {s:12,tag:"Construction",km:10.0,mer:{t:"EF 35' + 6 lignes droites",min:35,ld:true},dim:{t:"EF 45'",min:45,long:true}}
+ {s:12,tag:"Construction",km:10.0,mer:{t:"EF 35' + 6 lignes droites",min:35,ld:true},dim:{t:"EF 45'",min:45,long:true}},
+ /* 23/11, demande de Jules : « en prenant tout ce qui a été fait, adapte l'évolution à la régularité des runs et des entraînements ».
+    Strava S7 → S12 : 7 runs sur 12 prévus (mercredi 4/6, week-end 3/6 dont 0 sur les deux dernières semaines), S11 à 0 % et S12
+    à 49 % de course pure (deux semaines sous 50 % → on réécrit le format et on repart sous le niveau de S12). Box 7/10, Pull 4/5,
+    Push 2 fois (rien depuis le 24/10), Jambes jamais, Full body le samedi 2 fois, lundi et vendredi presque toujours vides.
+    → 2 runs (mercredi après la Pull, dimanche), 3e run le vendredi en S15 seulement si S13 et S14 sont à 80 % ; tempo en S17
+    seulement si S13 → S15 sont à 80 %. Semaine type : PROG0. */
+ {s:13,tag:"Nouveau départ",km:8.0,mer:{t:"EF 30' + 6 lignes droites",min:30,ld:true},dim:{t:"EF 35'",min:35,long:true}},
+ {s:14,tag:"Base aérobie",km:9.5,mer:{t:"EF 35' + 6 lignes droites",min:35,ld:true},dim:{t:"EF 40'",min:40,long:true}},
+ {s:15,tag:"Base aérobie",km:11.5,mer:{t:"EF 35' + 6 lignes droites",min:35,ld:true},ven:{t:"EF 25'",min:25,sub:"3e run : seulement si S13 et S14 sont à 80 % ou plus (onglet Course), sinon annule-le"},dim:{t:"EF 45'",min:45,long:true}},
+ {s:16,tag:"Décharge",km:6.5,mer:{t:"EF 25' + 6 lignes droites",min:25,ld:true},dim:{t:"EF 30'",min:30,long:true},
+  notes:{1:"Décharge : on réduit, on ne supprime pas.",3:"Décharge : on réduit, on ne supprime pas."}}
 ].map((w,i)=>({...w,start:addD("2026-10-12",7*i)}));
 
 /* ================= Programme : semaine type et changements =================
@@ -407,6 +418,18 @@ const SLOTS0=[
  {id:"run3",d:6,k:"run",src:"dim",lock:true,sub:"La plus longue de la semaine"}
 ];
 const SLOT_NOM={run1:"EF de milieu de semaine",run2:"EF du samedi",run3:"EF longue du week-end"};
+/* 23/11 : semaine type calée sur ce que Jules fait vraiment : box mardi et jeudi, Pull + EF le mercredi, Full body le samedi (il y
+   remplace la Push et les Jambes, faites 2 fois et 0 fois en 6 semaines), EF longue le dimanche ; lundi et vendredi libres (Push en
+   bonus via « + Ajouter ») ; kiné retirée (plus rien sur Strava depuis le 29/10). run2 passe au vendredi (3e run de S15). Version
+   intégrée à l'app, de priorité plus basse que data.json « programme » et que la semaine type modifiée sur le téléphone. */
+const PROG0=[{from:"2026-11-23",le:"2026-11-23",slots:[
+ {id:"box1",d:1,k:"box",t:"Box HYROX",lock:true},
+ {id:"pull",d:2,k:"muscu",salle:"pull",t:"Pull + abdos",cut:2},
+ {id:"run1",d:2,k:"run",src:"mer",lock:true},
+ {id:"box2",d:3,k:"box",t:"Box HYROX",lock:true},
+ {id:"run2",d:4,k:"run",src:"ven",lock:true},
+ {id:"full",d:5,k:"muscu",salle:"full",t:"Full body",sub:"En salle : jambes, pecs, dos, épaules",cut:1},
+ {id:"run3",d:6,k:"run",src:"dim",lock:true,sub:"La plus longue de la semaine"}]}];
 const NOTE_SLOT={0:"push",1:"box1",2:"pull",3:"box2",4:"legs",5:"run2",6:"run3"}; // notes du programme : jour d'origine → séance
 const TYPES={kine:{l:"Kiné",it:{k:"kine",t:"Kiné",lock:true}},box:{l:"Box",it:{k:"box",t:"Box HYROX",lock:true}},ef:{l:"EF",it:{k:"run",t:"EF"}},
  push:{l:"Push",it:{k:"muscu",salle:"push",t:"Push + abdos"}},pull:{l:"Pull",it:{k:"muscu",salle:"pull",t:"Pull + abdos"}},
@@ -434,9 +457,9 @@ function saveAbs(L){ABSL=normAbs(L);sv("prepa-absences",ABSL);KCACHE.clear();wri
   const ws=monday(d),wd=diff(ws,d),id=i==="kine"?(wd===1?"kine1":wd===3?"kine2":null):(OLD[wd]||[])[+i];
   if(id)N[ws+"|"+id]=MODS[k]}
  MODS=N;sv("prepa-modifs",MODS);sv("prepa-modifs-v",2)})();
-function versions(){const m=new Map();PROG_SRV.forEach(v=>m.set(v.from,v));PROG.forEach(v=>m.set(v.from,v));return [...m.values()].sort((a,b)=>a.from.localeCompare(b.from))}
+function versions(){const m=new Map();PROG0.forEach(v=>m.set(v.from,v));PROG_SRV.forEach(v=>m.set(v.from,v));PROG.forEach(v=>m.set(v.from,v));return [...m.values()].sort((a,b)=>a.from.localeCompare(b.from))}
 function slotsAt(ws){let v=null;for(const x of versions())if(x.from<=ws)v=x;return (v?v.slots:SLOTS0).map(s=>({...s}))}
-function slotName(s,w){if(s.src)return (w&&w[s.src]&&w[s.src].t)||SLOT_NOM[s.id]||"EF";return s.t}
+function slotName(s,w){if(s.src)return (w&&w[s.src]&&w[s.src].t)||(s.id==="run3"?"EF longue du ":"EF du ")+JOURSL[s.d];return s.t}
 function keyedDays(w){
  const D=Array.from({length:7},(_,i)=>({date:addD(w.start,i),items:[]}));
  slotsAt(w.start).forEach(s=>{if(s.src&&!w[s.src])return;
@@ -508,13 +531,15 @@ function saveMods(){sv("prepa-modifs",MODS);KCACHE.clear();writeNotif()}
 function saveProg(){sv("prepa-programme",PROG);KCACHE.clear();writeNotif()}
 /* Changement de semaine type à partir de la semaine « from », et pour toutes les suivantes */
 function editProg(from,fn){
- PROG_SRV.forEach(v=>{if(v.from>=from&&!PROG.some(x=>x.from===v.from))PROG.push({from:v.from,slots:v.slots.map(s=>({...s}))})});
+ [...PROG0,...PROG_SRV].forEach(v=>{if(v.from>=from&&!PROG.some(x=>x.from===v.from))PROG.push({from:v.from,slots:v.slots.map(s=>({...s}))})});
  if(!PROG.some(v=>v.from===from))PROG.push({from,slots:slotsAt(from)});
  PROG.forEach(v=>{if(v.from>=from){v.slots=fn(v.slots.map(s=>({...s})));v.le=TODAY}});
  PROG.sort((a,b)=>a.from.localeCompare(b.from));saveProg()}
-function progDiff(slots){const o=new Map(SLOTS0.map(s=>[s.id,s])),out=[];
+/* programme d'origine d'une semaine : la semaine type intégrée à l'app (PROG0 depuis le 23/11), sinon SLOTS0 */
+function baseAt(ws){let v=null;for(const x of PROG0)if(x.from<=ws)v=x;return v?v.slots:SLOTS0}
+function progDiff(slots,base){base=base||SLOTS0;const o=new Map(base.map(s=>[s.id,s])),out=[];
  slots.forEach(s=>{const a=o.get(s.id);if(!a)out.push(`ajoutée : ${slotName(s)} le ${JOURSL[s.d]}`);else if(a.d!==s.d)out.push(`déplacée : ${slotName(s)} le ${JOURSL[s.d]} (au lieu du ${JOURSL[a.d]})`)});
- SLOTS0.forEach(a=>{if(!slots.some(s=>s.id===a.id))out.push(`retirée : ${slotName(a)} du ${JOURSL[a.d]}`)});
+ base.forEach(a=>{if(!slots.some(s=>s.id===a.id))out.push(`retirée : ${slotName(a)} du ${JOURSL[a.d]}`)});
  return out}
 /* La montre enregistre la kiné en « Entraînement aux poids ». C'est la kiné si une kiné est prévue ce jour-là
    (programme ou déplacement) et que la séance n'est pas titrée Push / Pull / Jambes ; si une séance de salle
@@ -529,7 +554,7 @@ function writeNotif(){if(!("caches" in window))return;const map={};
  caches.open("prepa-notif").then(c=>c.put("./notif.json",new Response(JSON.stringify(map),{headers:{"Content-Type":"application/json"}}))).catch(()=>{})}
 const PHASES=[
  {n:"0 bis · Redémarrage",a:"2026-10-12",b:"2026-11-22",v:"6,5 → 10 km/sem",f:"2 runs"},
- {n:"1 · Base aérobie",a:"2026-11-23",b:"2027-01-03",v:"10 → 15 km/sem",f:"2 runs, +1 tempo si conditions remplies"},
+ {n:"1 · Base aérobie",a:"2026-11-23",b:"2027-01-03",v:"8 → 12 km/sem",f:"2 runs réguliers d'abord, 3e run et tempo selon la régularité"},
  {n:"2 · Seuil",a:"2027-01-04",b:"2027-02-14",v:"15 → 24 km/sem",f:"3 runs"},
  {n:"3 · Volume",a:"2027-02-15",b:"2027-03-28",v:"24 → 34 km/sem",f:"4 runs"},
  {n:"4 · Spécifique HYROX",a:"2027-03-29",b:"2027-04-25",v:"32 km/sem + compromise runs",f:"4 runs"},
@@ -702,7 +727,7 @@ function runPlan(it,niv){
   montre.push([`Répétition × ${n}`,"Travail : Durée 15 s, puis Récupération : Durée 1 min 15","sans cible"],["Retour au calme","Durée 3 min",""])}
  else{etapes.push(["Fin","2–3'","de marche avant d'arrêter la montre."]);montre.push(["Retour au calme","Libre","tu arrêtes après la marche"])}
  const titre=`EF ${T}'${it.ld?` + ${n} LD`:""} ${fc[0]}-${fc[1]}`;
- return {but:(it.sub||it.long?"Sortie la plus longue de la semaine : endurance de base et solidité des tibias, toujours à FC basse.":"Endurance fondamentale : construire la base aérobie sans accumuler de fatigue.")+(it.ld?" Les lignes droites relancent la foulée sans fatiguer.":""),
+ return {but:(it.long||it.id==="run3"?"Sortie la plus longue de la semaine : endurance de base et solidité des tibias, toujours à FC basse.":"Endurance fondamentale : construire la base aérobie sans accumuler de fatigue.")+(it.ld?" Les lignes droites relancent la foulée sans fatiguer.":""),
   etapes,montre,titre,apres:`Je calcule ton indice sur le bloc EF seulement (échauffement${it.ld?" et lignes droites":""} exclus) : c'est à ça que sert le découpage.`}}
 function runDetailHTML(it,date){
  const niv=date===TODAY?conseil(TODAY).niv:null,p=runPlan(it,niv);
@@ -767,9 +792,9 @@ function addPanel(w,date){const wd=diff(w.start,date);
   <span class="small muted">Ou, si tout ne passera pas cette semaine :</span>
   <div class="chips"><button class="chipbtn" data-fullrep="${date}" data-kind="full">Full body en salle à la place de la muscu</button><button class="chipbtn" data-fullrep="${date}" data-kind="fullpdc">Full body sans salle à la place de la muscu</button></div></div>`}
 /* Semaine type de la semaine affichée (les changements valent pour elle et les suivantes) */
-function progBlock(w){const S=slotsAt(w.start),diffs=progDiff(S);
+function progBlock(w){const S=slotsAt(w.start),diffs=progDiff(S,baseAt(w.start));
  const rows=JOURS.map((j,i)=>{const its=S.filter(s=>s.d===i&&(!s.src||WEEKS.some(x=>x.start>=w.start&&x[s.src]))).sort((a,b)=>(RANK[a.k]??5)-(RANK[b.k]??5));
-  return `<div class="tplrow"><span class="d">${j}</span><span>${its.length?its.map(s=>esc(s.src?SLOT_NOM[s.id]:s.t)).join(" · "):`<span class="muted">Repos</span>`}</span></div>`}).join("");
+  return `<div class="tplrow"><span class="d">${j}</span><span>${its.length?its.map(s=>esc(s.src?(s.id==="run3"?"EF longue du ":"EF du ")+JOURSL[s.d]:s.t)).join(" · "):`<span class="muted">Repos</span>`}</span></div>`}).join("");
  return `<div class="block"><h3>Ma semaine type</h3>
   <p class="muted small">Ce que l'app prévoit chaque semaine à partir de la S${w.s}. Pour la changer : « Modifier » sur une séance puis « Chaque semaine », ou « + Ajouter » sur un jour puis « Chaque… ». Un changement vaut pour la semaine affichée et les suivantes.</p>
   <div class="tpl">${rows}</div>
@@ -813,7 +838,7 @@ function renderSemaine(){
   <div class="tile wide"><span class="eyebrow">Course</span><b>${fr(st.km)}<small> / ${fr(w.km)} km</small></b><div class="meter"><span style="width:${pct}%"></span></div>${st.kmWod>0?`<span class="muted small">dont ${fr(st.kmWod)} km courus en WOD</span>`:""}</div>
   <div class="tile"><span class="eyebrow">${D.some(d=>d.away)?"Runs":"EF"}</span><b>${st.runs}<small> / ${nb("run")}</small></b><span class="muted small">fixes</span></div>
   <div class="tile"><span class="eyebrow">Box</span><b>${st.box}<small> / ${nb("box")}</small></b><span class="muted small">fixes</span></div>
-  <div class="tile"><span class="eyebrow">Kiné</span><b>${st.kine}<small> / ${nb("kine")}</small></b><span class="muted small">RDV</span></div>
+  ${nb("kine")||st.kine?`<div class="tile"><span class="eyebrow">Kiné</span><b>${st.kine}<small> / ${nb("kine")}</small></b><span class="muted small">RDV</span></div>`:""}
   <div class="tile"><span class="eyebrow">Muscu</span><b>${st.muscu}<small> / ${nb("muscu")}</small></b><span class="muted small">ajustables</span></div></div>`;
  // Jours
  h+=`<div class="block" style="gap:0">${D.map((d,i)=>{const isT=d.date===TODAY;
@@ -836,7 +861,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis, repas importés, séances déplacées, annulées ou ajoutées des 7 derniers jours et ta semaine type, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 49 · 18/11</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 50 · 23/11</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
@@ -880,7 +905,7 @@ function renderSemaine(){
  el.querySelectorAll("[data-bkm]").forEach(b=>b.onclick=()=>{const id=b.dataset.bkm,a=acts().find(x=>x.id===id);
   const v=Math.max(0,Math.round(((a?kmWod(a):0)+ +b.dataset.dv)*10)/10);if(a&&v===(+a.kb||0)&&BOXKM_SRV[id]==null)delete BOXKM[id];else BOXKM[id]=v;
   sv("prepa-boxkm",BOXKM);renderSemaine();renderCourse()});
- const pr=$("#progreset");if(pr)pr.onclick=()=>{editProg(w.start,()=>SLOTS0.map(x=>({...x})));renderSemaine()};
+ const pr=$("#progreset");if(pr)pr.onclick=()=>{editProg(w.start,()=>baseAt(w.start).map(x=>({...x})));renderSemaine()};
  el.querySelectorAll("[data-cancel]").forEach(b=>b.onclick=()=>{const k=b.dataset.cancel;const it=effDays(w).flatMap(x=>x.items).find(x=>x.key===k);
   if(it&&it.lock&&CONFIRM!==k){CONFIRM=k;renderSemaine();return}MODS[k]={s:"annule",le:TODAY};EDIT=null;CONFIRM=null;saveMods();renderSemaine()});
  el.querySelectorAll("[data-cancelok]").forEach(b=>b.onclick=()=>{MODS[b.dataset.cancelok]={s:"annule",le:TODAY};EDIT=null;CONFIRM=null;saveMods();renderSemaine()});
@@ -998,14 +1023,16 @@ function renderCourse(){
  const cond=[
   ["S7 et S8 à 80 % ou plus en course pure","Lignes droites en S9 (déjà au programme)",S[1].ended?(ok(0)&&ok(1)?"ok":"ko"):null],
   ["S7 → S10 à 80 % ou plus en course pure","3e run le lundi (25') dès S12, 1er tempo en S13 le 23/11",S[3].ended?([0,1,2,3].every(ok)?"ok":"ko"):null],
+  ["S13 et S14 à 80 % ou plus en course pure","3e run le vendredi en S15 (EF 25')",S[7]&&S[7].ended?(ok(6)&&ok(7)?"ok":"ko"):null],
+  ["S13 → S15 à 80 % ou plus en course pure","1er tempo dans l'EF du mercredi en S17",S[8]&&S[8].ended?([6,7,8].every(ok)?"ok":"ko"):null],
   ["Une semaine sous 50 %","On ne baisse pas l'objectif suivant : on répète la semaine",null],
   ["Deux semaines de suite sous 50 %","Retour à 1 seul run et réécriture du format",null],
   ["Douleur tibiale qui persiste après l'échauffement","Stop course, vélo ou rameur, et on en reparle",null]];
  let h=`<div><span class="eyebrow">Course à pied</span><h1>Reconstruire la base</h1></div><div>${srcHTML()}</div>
  <div class="block"><h2>Volume hebdo</h2><p class="muted small">Km des sorties course sur Strava + km courus dans les WOD de box (lus dans la description de la séance sur Strava, corrigeables dans l'onglet Semaine). Les étapes de progression se jugent sur la course pure.</p>${volChart(A)}</div>
- <div class="block"><h2>Programme S7 → S12</h2><div class="tablewrap"><table><thead><tr><th>Sem.</th><th>Mercredi</th><th>Week-end</th><th class="r">Cible</th><th class="r">Fait</th></tr></thead><tbody>
- ${WEEKS.map((w,i)=>`<tr class="${TODAY>=w.start&&TODAY<=addD(w.start,6)?"cur":""}"><td><strong>S${w.s}</strong><br><span class="muted small num">${dm(w.start)}</span></td><td>${esc(w.mer.t)}</td><td>${esc((w.sam||w.dim).t)}${w.sam?" <span class='muted small'>(sam.)</span>":""}</td><td class="r">${fr(w.km)}</td><td class="r">${S[i].started?fr(S[i].km)+"<br>":""}${pctPill(S[i],w)}</td></tr>`).join("")}
- </tbody></table></div><p class="small muted">47,5 km sur 6 semaines, plus que les 7 semaines précédentes réunies (46,3 km). Zéro intensité jusqu'à S12.</p></div>
+ <div class="block"><h2>Programme S7 → S${WEEKS[WEEKS.length-1].s}</h2><div class="tablewrap"><table><thead><tr><th>Sem.</th><th>Mercredi</th><th>Week-end</th><th class="r">Cible</th><th class="r">Fait</th></tr></thead><tbody>
+ ${WEEKS.map((w,i)=>`<tr class="${TODAY>=w.start&&TODAY<=addD(w.start,6)?"cur":""}"><td><strong>S${w.s}</strong><br><span class="muted small num">${dm(w.start)}</span></td><td>${esc(w.mer.t)}${w.ven?`<br><span class='muted small'>+ ven. ${esc(w.ven.t)}</span>`:""}</td><td>${esc((w.sam||w.dim).t)}${w.sam?" <span class='muted small'>(sam.)</span>":""}</td><td class="r">${fr(w.km)}</td><td class="r">${S[i].started?fr(S[i].km)+"<br>":""}${pctPill(S[i],w)}</td></tr>`).join("")}
+ </tbody></table></div><p class="small muted">S7 → S12 : 47,5 km prévus, 7 runs faits sur 12. Depuis le 23/11 : 2 runs (mercredi après la Pull, dimanche), un 3e en S15 et un premier tempo en S17 seulement si la régularité suit (étapes ci-dessous).</p></div>
  <div class="block"><h2>Allure ↔ FC</h2><p class="muted small">Indice d'efficacité = vitesse (m/s) ÷ FC × 1000, calculé sur le bloc principal. Plus haut = mieux.</p>${efChart()}
   <p class="small muted">Découplage sur les sorties de 45' et plus : 8,5 % le 02/09, 15 % le 21/09. Cible sous 5 %, à reprendre en S12.</p></div>
  <div class="block"><h2>Quand le programme évolue</h2><div class="stack" style="gap:10px">${cond.map(c=>`<div class="it"><div class="txt"><strong>${esc(c[0])}</strong><span class="muted small">${esc(c[1])}</span></div>${c[2]==="ok"?`<span class="pill ok">✓ rempli</span>`:c[2]==="ko"?`<span class="pill ko">✕ non rempli</span>`:""}</div>`).join("")}</div></div>
