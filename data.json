@@ -1,9 +1,42 @@
 {
- "maj": "2026-11-23T21:55",
+ "maj": "2026-11-24T21:55",
  "strava": {
-  "maj": "2026-11-23T21:55",
+  "maj": "2026-11-24T21:55",
   "source": "Strava list_activities, du 01/07 au 12/10/2026",
   "items": [
+   {
+    "id": "21110603293",
+    "n": "HYROX TEAM OF 2",
+    "t": "HighIntensityIntervalTraining",
+    "d": "2026-11-24",
+    "h": "18:27",
+    "km": 0.0,
+    "min": 33.9,
+    "re": 102,
+    "s": null
+   },
+   {
+    "id": "21110603443",
+    "n": "Marche dans l'après-midi",
+    "t": "Walk",
+    "d": "2026-11-24",
+    "h": "16:46",
+    "km": 3.14,
+    "min": 48.8,
+    "re": 5,
+    "s": null
+   },
+   {
+    "id": "21105297428",
+    "n": "Kiné",
+    "t": "PhysicalTherapy",
+    "d": "2026-11-24",
+    "h": "10:42",
+    "km": 0.0,
+    "min": 48.6,
+    "re": 5,
+    "s": null
+   },
    {
     "id": "21096947006",
     "n": "Sortie EF 20’",
