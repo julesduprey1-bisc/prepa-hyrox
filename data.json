@@ -1,9 +1,31 @@
 {
- "maj": "2026-11-25T21:55",
+ "maj": "2026-11-26T21:55",
  "strava": {
-  "maj": "2026-11-25T21:55",
+  "maj": "2026-11-26T21:55",
   "source": "Strava list_activities, du 01/07 au 12/10/2026",
   "items": [
+   {
+    "id": "21134560667",
+    "n": "HYROX TRAIN",
+    "t": "HighIntensityIntervalTraining",
+    "d": "2026-11-26",
+    "h": "17:25",
+    "km": 0.0,
+    "min": 45.0,
+    "re": 107,
+    "s": null
+   },
+   {
+    "id": "21132907006",
+    "n": "Marche dans l'après-midi",
+    "t": "Walk",
+    "d": "2026-11-26",
+    "h": "16:05",
+    "km": 1.84,
+    "min": 29.4,
+    "re": 2,
+    "s": null
+   },
    {
     "id": "21110603293",
     "n": "HYROX TEAM OF 2",
