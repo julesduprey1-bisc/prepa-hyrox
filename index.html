@@ -120,6 +120,7 @@ nav.tabbar button[aria-selected="true"] svg{stroke:var(--ink)}
 .st.jour{border-color:var(--plate);background:var(--plate);color:var(--plate-ink)}
 .chip{display:inline-block;font:600 12px var(--font-b);letter-spacing:.04em;text-transform:uppercase;padding:1px 7px;border-radius:5px;background:var(--soft);color:var(--muted);margin-right:4px}
 .chip.lock{background:var(--ink);color:var(--bg)}
+.chip.leger{background:var(--soft);color:var(--miss)}
 .link{border:none;background:none;padding:0;color:var(--ink);text-decoration:underline;text-underline-offset:3px;cursor:pointer;font:600 15px var(--font-b);text-align:left}
 
 /* Aujourd'hui */
@@ -554,10 +555,11 @@ function progDiff(slots,base){base=base||SLOTS0;const o=new Map(base.map(s=>[s.i
 function kineCtx(date){if(KCACHE.has(date))return KCACHE.get(date);let r={kine:false,salle:false};const w=weekOf(date);
  if(w){const its=effDays(w).find(x=>x.date===date).items.filter(x=>!x.cancel);r={kine:its.some(x=>x.k==="kine"),salle:its.some(x=>x.k==="muscu")}}
  KCACHE.set(date,r);return r}
-function notifLine(x){let s=x.t;if(x.k==="run")s+=" · "+runShort(x)+(x.hyx?"":", plafond 142");if(x.away&&x.awayFrom&&x.awayFrom!==x.t)s+=` (pas chez toi, au lieu de : ${x.awayFrom})`;if(x.k==="box")s+=" (fixe)";if(x.k==="kine"&&x.h)s+=" · "+x.h;if(x.moved)s+=` · déplacée du ${dm(x.moved)}`;if(x.note)s+=" — "+x.note;return s}
+function notifLine(x,niv){let s=titreJour(x,niv);if(x.k==="run")s+=" · "+runShort(x,niv)+(x.hyx?"":`, plafond ${allege(x,niv)?138:142}`);if(x.away&&x.awayFrom&&x.awayFrom!==x.t)s+=` (pas chez toi, au lieu de : ${x.awayFrom})`;if(x.k==="box")s+=" (fixe)";if(x.k==="kine"&&x.h)s+=" · "+x.h;if(x.moved)s+=` · déplacée du ${dm(x.moved)}`;if(x.note)s+=" — "+x.note;return s}
 function writeNotif(){if(!("caches" in window))return;const map={};
- WEEKS.forEach(w=>effDays(w).forEach((d,i)=>{const its=d.items.filter(x=>!x.cancel&&x.k!=="repos");
-  map[d.date]={title:`${JOURSL[i][0].toUpperCase()+JOURSL[i].slice(1)} ${dm(d.date)} · S${w.s}`,body:its.length?its.map(notifLine).join("\n"):"Repos ou marche libre."}}));
+ WEEKS.forEach(w=>effDays(w).forEach((d,i)=>{const its=d.items.filter(x=>!x.cancel&&x.k!=="repos"),
+   niv=d.date===TODAY||d.date===addD(TODAY,1)?conseil(d.date).niv:null; // aujourd'hui, et demain d'après la charge connue ce soir
+  map[d.date]={title:`${JOURSL[i][0].toUpperCase()+JOURSL[i].slice(1)} ${dm(d.date)} · S${w.s}`,body:its.length?its.map(x=>notifLine(x,niv)).join("\n"):"Repos ou marche libre."}}));
  caches.open("prepa-notif").then(c=>c.put("./notif.json",new Response(JSON.stringify(map),{headers:{"Content-Type":"application/json"}}))).catch(()=>{})}
 const PHASES=[
  {n:"0 bis · Redémarrage",a:"2026-10-12",b:"2026-11-22",v:"6,5 → 10 km/sem",f:"2 runs"},
@@ -649,7 +651,7 @@ function etatRatio(r){return r>1.5?["rouge","Trop vite"]:r>1.3?["orange","En hau
 function conseilSeance(it,niv){const legs=["legs","full"].includes(grp(it.salle));
  if(it.hyx){if(niv==="rouge")return "3 tours au lieu de 4, effort 6/10";if(niv==="orange")return "4 tours, effort 7/10 max, pas de sprint";return ""}
  if(it.salle==="fullpdc"){if(niv==="rouge")return "une série de moins par exercice, aucune à l'échec";if(niv==="orange")return "RPE 7 max, pas d'échec";return ""}
- if(niv==="rouge"){if(it.k==="box")return "RPE 6 max, sans chercher le score";if(it.k==="run")return "garde la durée, FC 130–135 seulement";if(legs)return "−20 % sur les charges, aucune série à l'échec";if(it.k==="muscu")return "haut du corps OK, saute la marche inclinée"}
+ if(niv==="rouge"){if(it.k==="box")return "RPE 6 max, sans chercher le score";if(it.k==="run")return it.ld?"garde la durée, FC 130–135, 4 lignes droites à 80 % au lieu de 6":"garde la durée, FC 130–135 seulement";if(legs)return "−20 % sur les charges, aucune série à l'échec";if(it.k==="muscu")return "haut du corps OK, saute la marche inclinée"}
  if(niv==="orange"){if(it.k==="box")return "RPE 7, pas de max sur les stations";if(it.k==="run")return "telle que prévue, plafond 140 strict";if(legs)return "RPE 7 max, pas d'échec"}
  return ""}
 function conseil(date,A){A=A||acts();
@@ -740,7 +742,7 @@ function runDetailHTML(it,date){
  const niv=date===TODAY?conseil(TODAY).niv:null,p=runPlan(it,niv);
  return `<div class="rundet">
   <p class="small"><strong>But :</strong> ${esc(p.but)}</p>
-  ${niv==="rouge"&&!it.ref?`<p class="small"><strong>Aujourd'hui on allège :</strong> ${it.hyx?"3 tours au lieu de 4, effort 6/10":`plage 130–135${it.ld?" et 4 lignes droites à 80 %":""}`}, déjà pris en compte ci-dessous.</p>`:""}
+  ${niv==="rouge"&&!it.ref?`<p class="small"><strong>Aujourd'hui on allège :</strong> ${it.hyx?"3 tours au lieu de 4, effort 6/10":`plage 130–135${it.ld?" et 4 lignes droites à 80 % au lieu de 6":""}`}, déjà pris en compte ci-dessous.</p>`:""}
   <ol class="etapes">${p.etapes.map(([t,d,x])=>`<li><b>${esc(t)} · ${esc(d)}</b><span>${esc(x)}</span></li>`).join("")}</ol>
   <details class="montre"><summary>Régler la montre</summary>
    <p class="small">Sur l'iPhone, app <b>Forme</b> › <b>Exercice</b> › <b>Course (plein air)</b> › <b>Personnalisé</b> › <b>+</b>. Nom : <b>${esc(p.titre)}</b></p>
@@ -748,7 +750,12 @@ function runDetailHTML(it,date){
    <p class="small muted">Enregistre : la séance arrive sur ta montre (Exercice › Course (plein air) › Personnalisé). La montre vibre quand ta FC sort de la plage. Créée directement sur la montre (Objectifs › Personnalisé › Ajouter), il n'y a pas de répétition automatique : chaque intervalle s'ajoute à la main.</p>
   </details>
   <p class="small"><strong>Après :</strong> titre Strava « ${esc(p.titre)} ». ${esc(p.apres)}</p></div>`}
-function runShort(it){if(it.hyx)return `10' + ${it.dech?3:4} × (800 m allure HYROX + station) + 5'`;if(it.ref)return "10' + 30' à FC 135 ± 3 + 5'";const T=it.min||30;return `5' + ${T-5}' à FC 130–140${it.ld?` + 6 × 15"`:""}`}
+/* 28/11 (Jules : « Je dois faire 6 ou 4 lignes droites, pas clair pour aujourd'hui ») : un jour « Alléger », le titre, la
+   ligne du programme, la notification et l'ajustement du jour suivent le détail de runPlan (4 lignes droites, FC 130–135,
+   plafond 138 ; run HYROX : 3 tours, effort 6/10) au lieu de répéter le texte du plan (6 lignes droites, FC 130–140). */
+function allege(it,niv){return niv==="rouge"&&it.k==="run"&&!it.ref&&!it.cancel}
+function titreJour(it,niv){return allege(it,niv)&&it.ld?it.t.replace(/\b6 lignes droites/,"4 lignes droites"):it.t}
+function runShort(it,niv){const lg=allege(it,niv);if(it.hyx)return `10' + ${lg||it.dech?3:4} × (800 m allure HYROX + station) + 5'`;if(it.ref)return "10' + 30' à FC 135 ± 3 + 5'";const T=it.min||30;return `5' + ${T-5}' à FC ${lg?"130–135":"130–140"}${it.ld?` + ${lg?4:6} × 15"`:""}`}
 function itemDetail(it){
  if(it.k==="run"){if(it.hyx)return "4 × 800 m à allure HYROX, une station au poids du corps après chaque 800 m.";let s=EF_TXT;if(it.km)s+=` ≈ ${fr(it.km)} km.`;if(it.ld)s+=" "+LD_TXT;return s}
  if(it.k==="box")return "Verrouillé : on ne coupe jamais les deux box.";
@@ -768,9 +775,10 @@ function statusOf(date,it,A){
  return ["","À venir"];
 }
 function itemRow(d,it,isT,s,w){
- const chips=(it.away&&!it.cancel?`<span class="chip moved">Pas chez toi</span>`:"")+(it.moved?`<span class="chip moved">Déplacée du ${dm(it.moved)}</span>`:"")+(it.added?`<span class="chip moved">Ajoutée</span>`:"")+(it.k==="kine"?`<span class="chip lock">RDV</span>`:it.lock?`<span class="chip lock">Fixe</span>`:it.cut?`<span class="chip">Coupe ${it.cut}</span>`:"");
- let h=`<div class="it ${it.cancel?"cancel":""}"><div class="txt"><strong>${chips}${esc(it.t)}</strong>
-  ${it.un?`<span class="muted small">Une seule séance par jour : on garde « ${esc(it.un)} »</span>`:it.away&&it.awayFrom&&it.awayFrom!==it.t?`<span class="muted small">au lieu de : ${esc(it.awayFrom)}</span>`:""}${it.mvAuto?`<span class="muted small">Une séance par jour : ${JOURSL[diff(w.start,it.mvDe)]} ${dm(it.mvDe)}, c'est « ${esc(it.mvAuto)} ». Le run passe ici, il n'est pas supprimé.</span>`:it.deux?`<span class="muted small">Aucun jour libre cette semaine : le run reste ce jour-là, avec « ${esc(it.deux)} ».</span>`:""}${it.note&&!it.cancel?`<span class="small">${esc(it.note)}</span>`:""}${it.replaced&&MODS[it.par]?`<span class="muted small">par le ${esc(MODS[it.par].it.t)} du ${JOURSL[diff(w.start,MODS[it.par].date)]} ${dm(MODS[it.par].date)}</span>`:""}${it.k==="kine"&&!it.cancel&&it.h?`<span class="muted small">${esc(it.h)}</span>`:""}${(r=>r?`<span class="small">Remplacée par : ${esc(r.t)}</span>`:"")(remplOf(d.date,it,acts()))}${it.k==="run"&&!it.cancel?`<span class="muted small">${it.hyx?`${it.dech?3:4} × 800 m + une station · effort 7/10`:`${it.ld?"6 lignes droites · ":""}${it.ref?"Protocole de référence · ":""}FC 130–140`}</span>`:""}${s&&s[0]==="fait"?(re=>re?`<span class="muted small">Effort relatif ${re}</span>`:"")(acts().filter(a=>matchAct(a,d.date,it)).reduce((n,a)=>n+(+a.re||0),0)):""}${it.k==="box"&&s&&s[0]==="fait"?wodRow(acts().find(a=>matchAct(a,d.date,it))):""}
+ const niv=d.date===TODAY&&it.k==="run"&&!it.cancel&&!remplOf(d.date,it,acts())?conseil(TODAY).niv:null,lg=allege(it,niv);
+ const chips=(it.away&&!it.cancel?`<span class="chip moved">Pas chez toi</span>`:"")+(it.moved?`<span class="chip moved">Déplacée du ${dm(it.moved)}</span>`:"")+(it.added?`<span class="chip moved">Ajoutée</span>`:"")+(it.k==="kine"?`<span class="chip lock">RDV</span>`:it.lock?`<span class="chip lock">Fixe</span>`:it.cut?`<span class="chip">Coupe ${it.cut}</span>`:"")+(lg?`<span class="chip leger">Allégée</span>`:"");
+ let h=`<div class="it ${it.cancel?"cancel":""}"><div class="txt"><strong>${chips}${esc(titreJour(it,niv))}</strong>
+  ${it.un?`<span class="muted small">Une seule séance par jour : on garde « ${esc(it.un)} »</span>`:it.away&&it.awayFrom&&it.awayFrom!==it.t?`<span class="muted small">au lieu de : ${esc(it.awayFrom)}</span>`:""}${it.mvAuto?`<span class="muted small">Une séance par jour : ${JOURSL[diff(w.start,it.mvDe)]} ${dm(it.mvDe)}, c'est « ${esc(it.mvAuto)} ». Le run passe ici, il n'est pas supprimé.</span>`:it.deux?`<span class="muted small">Aucun jour libre cette semaine : le run reste ce jour-là, avec « ${esc(it.deux)} ».</span>`:""}${it.note&&!it.cancel?`<span class="small">${esc(it.note)}</span>`:""}${it.replaced&&MODS[it.par]?`<span class="muted small">par le ${esc(MODS[it.par].it.t)} du ${JOURSL[diff(w.start,MODS[it.par].date)]} ${dm(MODS[it.par].date)}</span>`:""}${it.k==="kine"&&!it.cancel&&it.h?`<span class="muted small">${esc(it.h)}</span>`:""}${(r=>r?`<span class="small">Remplacée par : ${esc(r.t)}</span>`:"")(remplOf(d.date,it,acts()))}${it.k==="run"&&!it.cancel?`<span class="muted small">${it.hyx?`${lg||it.dech?3:4} × 800 m + une station · effort ${lg?6:7}/10`:`${it.ld?`${lg?4:6} lignes droites · `:""}${it.ref?"Protocole de référence · ":""}FC ${lg?"130–135":"130–140"}`}</span>`:""}${s&&s[0]==="fait"?(re=>re?`<span class="muted small">Effort relatif ${re}</span>`:"")(acts().filter(a=>matchAct(a,d.date,it)).reduce((n,a)=>n+(+a.re||0),0)):""}${it.k==="box"&&s&&s[0]==="fait"?wodRow(acts().find(a=>matchAct(a,d.date,it))):""}
   <span class="row" style="gap:14px">${it.salle&&!isT&&!it.cancel?`<button class="link" data-salle="${it.salle}">Checklist</button>`:""}${it.k==="run"&&!it.cancel?`<button class="link small-link" data-det="${it.key}">${DET===it.key?"Fermer le détail":"Détail"}</button>`:""}${it.k!=="repos"?`<button class="link small-link" data-edit="${it.key}">${EDIT===it.key?"Fermer":"Modifier"}</button>`:""}</span></div>${s?`<span class="st ${s[0]}">${s[1]}</span>`:""}</div>`;
  if(DET===it.key)h+=runDetailHTML(it,d.date);
  if(EDIT===it.key)h+=editPanel(d,it,w);
@@ -832,9 +840,10 @@ function renderSemaine(){
  h+=lieuBlock();
  // Aujourd'hui
  const td=D.find(d=>d.date===TODAY);
- if(td){h+=`<div class="block"><span class="eyebrow">Aujourd'hui</span>${adjHTML(conseil(TODAY,A),"Ajustement du jour")}<div class="todo">${td.items.map(it=>{const s=statusOf(TODAY,it,A);
+ if(td){const cj=conseil(TODAY,A);h+=`<div class="block"><span class="eyebrow">Aujourd'hui</span>${adjHTML(cj,"Ajustement du jour")}<div class="todo">${td.items.map(it=>{const s=statusOf(TODAY,it,A);
    const ret=A.filter(a=>matchAct(a,TODAY,it)).map(a=>[retourSeance(a,A),kmWod(a)?fr(kmWod(a))+" km courus":""].filter(Boolean).join(" · ")).filter(Boolean).join(" · ");
-   return `<div class="card k-${it.k}"><div class="row between"><h3>${it.moved?`<span class="chip moved">Déplacée du ${dm(it.moved)}</span>`:it.added?`<span class="chip moved">Ajoutée</span>`:""}${esc(it.t)}</h3>${s?`<span class="st ${s[0]}">${s[1]}</span>`:""}</div>
+   const nv=remplOf(TODAY,it,A)?null:cj.niv;
+   return `<div class="card k-${it.k}"><div class="row between"><h3>${it.moved?`<span class="chip moved">Déplacée du ${dm(it.moved)}</span>`:it.added?`<span class="chip moved">Ajoutée</span>`:""}${allege(it,nv)?`<span class="chip leger">Allégée</span>`:""}${esc(titreJour(it,nv))}</h3>${s?`<span class="st ${s[0]}">${s[1]}</span>`:""}</div>
    ${it.un?`<p class="muted small">Pas chez toi, une seule séance par jour : on garde « ${esc(it.un)} ».</p>`:it.away&&it.awayFrom&&it.awayFrom!==it.t?`<p class="muted small">Pas chez toi : au lieu de ${esc(it.awayFrom)}.</p>`:""}${it.note?`<p><strong>${esc(it.note)}</strong></p>`:""}${it.cancel?"":it.k==="run"?(remplOf(TODAY,it,A)?`<p><strong>Remplacée par : ${esc(remplOf(TODAY,it,A).t)}</strong></p>`:runDetailHTML(it,TODAY)):itemDetail(it)?`<p class="muted small">${esc(itemDetail(it))}</p>`:""}
    ${ret?`<p class="retour"><strong>Retour :</strong> ${esc(ret)}</p>`:""}
    ${it.salle&&!it.cancel?`<div><button class="btn" data-salle="${it.salle}">Ouvrir la checklist</button></div>`:""}</div>`}).join("")}</div></div>`;
@@ -851,7 +860,9 @@ function renderSemaine(){
  h+=`<div class="block" style="gap:0">${D.map((d,i)=>{const isT=d.date===TODAY;
    return `<div class="day ${isT?"today":""}"><div class="d">${JOURS[i]}<small class="num">${dm(d.date)}</small></div><div class="items">${d.items.length?"":`<span class="muted small">Rien de prévu</span>`}${d.items.map(it=>{const s=statusOf(d.date,it,A);
      return itemRow(d,it,isT,s,w)}).join("")}<button class="link small-link addlink" data-add="${d.date}">${ADD===d.date?"Fermer":"+ Ajouter"}</button>${ADD===d.date?addPanel(w,d.date):""}</div></div>`}).join("")}</div>`;
- h+=`<p class="small muted">Si la semaine déraille, on coupe par le bas : Push, puis Pull, puis jambes. Les box et les EF ne sautent pas : on les déplace.</p>`;
+ // ordre de coupe lu dans la semaine (v54 : le texte fixe « Push, puis Pull, puis jambes » datait d'avant les Full body du 23/11)
+ const cuts=D.flatMap((d,i)=>d.items.filter(x=>x.cut&&!x.cancel).map(x=>({n:x.cut,t:`${x.t} du ${JOURSL[i]}`}))).sort((a,b)=>a.n-b.n);
+ h+=`<p class="small muted">Si la semaine déraille, on coupe dans l'ordre des « Coupe » : ${cuts.length?esc(cuts.map(c=>c.t).join(", puis ")):"rien à couper cette semaine"}. Les box et les EF ne sautent pas : on les déplace.</p>`;
  h+=progBlock(w);
  // Compteurs
  const C=[["Dernier run","run",7,4],["Dernière box","box",6,4],["Dernière muscu","muscu",7,4]].map(([l,k,bad,warn])=>{const d=lastOf(k,A);const n=d?diff(d,TODAY):null;
@@ -868,7 +879,7 @@ function renderSemaine(){
   <div class="row"><button class="btn" id="rsave" ${DB?"":"disabled"}>Enregistrer</button><span class="muted small" id="rmsg">${esc(RESS_MSG||(DB?"":"Enregistrement indisponible dans cette vue"))}</span></div></div>`;
  h+=pushBlock();
  h+=`<div class="block"><h3>Envoyer à mon coach</h3><p class="muted small">Tes séances salle, ressentis, repas importés, séances déplacées, annulées ou ajoutées des 7 derniers jours et ta semaine type, prêts à coller dans la conversation Claude.</p><div class="row"><button class="btn" id="sendc">Partager mes saisies</button><span class="muted small" id="sendmsg"></span></div></div>`;
- h+=`<p class="small muted" style="text-align:center">Version 53 · 23/11</p>`;
+ h+=`<p class="small muted" style="text-align:center">Version 54 · 28/11</p>`;
  const el=$("#v-semaine");el.innerHTML=h;
  el.querySelectorAll("[data-wk]").forEach(b=>b.onclick=()=>{WI=Math.max(0,Math.min(WEEKS.length-1,WI+ +b.dataset.wk));renderSemaine()});
  el.querySelectorAll("[data-salle]").forEach(b=>b.onclick=()=>{openSalle(b.dataset.salle)});
